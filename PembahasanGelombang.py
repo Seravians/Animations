@@ -135,15 +135,15 @@ def make_question_screenshot(title, rows, width=11.4):
 
 
 
-def make_question_highlight(target, color=ACCENT):
-    rect = SurroundingRectangle(target, color=color, buff=0.075, stroke_width=2)
+def make_question_highlight(target, color=ACCENT, buff=0.075):
+    rect = SurroundingRectangle(target, color=color, buff=buff, stroke_width=2)
     rect.set_fill(color, opacity=0.28)
     rect.set_stroke(color, opacity=0.9, width=2)
     return rect
 
 
-def _swipe_single_highlight(scene, target, color=ACCENT, run_time=0.55):
-    full = make_question_highlight(target, color)
+def _swipe_single_highlight(scene, target, color=ACCENT, run_time=0.55, buff=0.075):
+    full = make_question_highlight(target, color, buff=buff)
     left_anchor = full.get_left()
 
     def update(mob, alpha):
@@ -157,9 +157,11 @@ def _swipe_single_highlight(scene, target, color=ACCENT, run_time=0.55):
 
 
 def swipe_in_highlight(scene, target, color=ACCENT, run_time=0.55):
-    # q_text rows are VGroups of Text lines when text wraps — highlight each line separately
+    # q_text rows are VGroups of Text lines when text wraps — highlight each line separately.
+    # Use a tighter buff so adjacent line highlights don't overlap: line spacing is 0.055,
+    # so each side needs buff < 0.055 / 2 = 0.0275.
     if isinstance(target, VGroup) and len(target) > 1 and isinstance(target[0], Text):
-        return [_swipe_single_highlight(scene, line, color, run_time=0.45) for line in target]
+        return [_swipe_single_highlight(scene, line, color, run_time=0.45, buff=0.02) for line in target]
     return [_swipe_single_highlight(scene, target, color, run_time)]
 
 
