@@ -142,6 +142,20 @@ def make_question_highlight(target, color=ACCENT):
     return rect
 
 
+def swipe_in_highlight(scene, target, color=ACCENT, run_time=0.55):
+    full = make_question_highlight(target, color)
+    left_anchor = full.get_left()
+
+    def update(mob, alpha):
+        mob.become(full.copy())
+        mob.stretch(max(alpha, 1e-4), 0, about_point=left_anchor)
+
+    proxy = full.copy()
+    proxy.stretch(1e-4, 0, about_point=left_anchor)
+    scene.play(UpdateFromAlphaFunc(proxy, update), run_time=run_time, rate_func=linear)
+    return proxy
+
+
 def present_question(scene, header, question, highlight_indices, dock_width=5.35):
     question.move_to(DOWN * 0.2)
     if question.height > 5.45:
@@ -153,12 +167,9 @@ def present_question(scene, header, question, highlight_indices, dock_width=5.35
 
     highlight = None
     for index in highlight_indices:
-        new_highlight = make_question_highlight(question.rows[index])
-        if highlight is None:
-            highlight = new_highlight
-            scene.play(FadeIn(highlight), run_time=0.7)
-        else:
-            scene.play(Transform(highlight, new_highlight), run_time=0.8)
+        if highlight is not None:
+            scene.play(FadeOut(highlight), run_time=0.3)
+        highlight = swipe_in_highlight(scene, question.rows[index])
         scene.wait(QUESTION_PAUSE)
 
     if highlight is not None:
