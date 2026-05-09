@@ -18,10 +18,42 @@ QUESTION_BAR = "#e2e8f0"
 QUESTION_INK = "#0f172a"
 UI_FONT = "Arial"
 
-QUESTION_PAUSE = 2.8
-STEP_PAUSE = 3.8
-LONG_PAUSE = 5.0
-INTRO_HOLD = 6.5
+# Voiceover timing profile
+# Rough targets from storyboard:
+# Intro ~30s | Soal 1 ~2:30 | Soal 2 ~2:25 | Soal 3 ~1:40 | Soal 4 ~1:30 | Soal 5 ~2:00
+QUESTION_PAUSE = 2.6          # default 2-3 second hold after each question highlight
+QUESTION_SWIPE_TIME = 0.85    # slow left-to-right highlight sweep, easier to sync to VO
+STEP_PAUSE = 5.2              # default pause after a reasoning/formula step
+FORMULA_PAUSE = 6.5           # default pause after transformed formulas
+LONG_PAUSE = 8.0
+INTRO_HOLD = 17.0             # long final intro hold so total intro is around 30s
+
+SOAL1_HIGHLIGHT_PAUSE = 2.8
+SOAL1_STEP_PAUSE = 8.5
+SOAL1_FORMULA_PAUSE = 9.5
+SOAL1_ANSWER_PAUSE = 12.0
+
+SOAL2_HIGHLIGHT_PAUSE = 2.9
+SOAL2_SILENT_WAVE_TIME = 6.0  # storyboard note: no narration here; let the standing wave move
+SOAL2_STEP_PAUSE = 9.0
+SOAL2_FORMULA_PAUSE = 9.5
+SOAL2_ANSWER_PAUSE = 12.0
+
+SOAL3_HIGHLIGHT_PAUSE = 2.7
+SOAL3_OSCILLATION_TIME = 7.0  # storyboard note: narrate observation during spring motion
+SOAL3_STEP_PAUSE = 5.5
+SOAL3_FORMULA_PAUSE = 6.8
+SOAL3_ANSWER_PAUSE = 9.5
+
+SOAL4_HIGHLIGHT_PAUSE = 2.7
+SOAL4_GRAPH_PAUSE = 5.4
+SOAL4_FORMULA_PAUSE = 6.8
+SOAL4_ANSWER_PAUSE = 9.0
+
+SOAL5_HIGHLIGHT_PAUSE = 2.8
+SOAL5_DIAGRAM_PAUSE = 7.5
+SOAL5_FORMULA_PAUSE = 8.5
+SOAL5_ANSWER_PAUSE = 11.0
 
 config.background_color = BG_COLOR
 
@@ -156,40 +188,54 @@ def _swipe_single_highlight(scene, target, color=ACCENT, run_time=0.55, buff=0.0
     return proxy
 
 
-def swipe_in_highlight(scene, target, color=ACCENT, run_time=0.55):
+def swipe_in_highlight(scene, target, color=ACCENT, run_time=QUESTION_SWIPE_TIME):
     # q_text rows are VGroups of Text lines when text wraps — highlight each line separately.
-    # Use a tighter buff so adjacent line highlights don't overlap: line spacing is 0.055,
-    # so each side needs buff < 0.055 / 2 = 0.0275.
+    # The total sweep time is divided across wrapped lines so voiceover pacing stays predictable.
+    # A tight buff prevents the highlight from covering two rows at once.
     if isinstance(target, VGroup) and len(target) > 1 and isinstance(target[0], Text):
-        return [_swipe_single_highlight(scene, line, color, run_time=0.45, buff=0.02) for line in target]
+        per_line_time = max(0.35, run_time / len(target))
+        highlights = []
+        for line in target:
+            highlights.append(_swipe_single_highlight(scene, line, color, run_time=per_line_time, buff=0.02))
+        return highlights
     return [_swipe_single_highlight(scene, target, color, run_time)]
 
 
-def present_question(scene, header, question, highlight_indices, dock_width=5.35):
+def present_question(
+    scene,
+    header,
+    question,
+    highlight_indices,
+    dock_width=5.35,
+    highlight_pause=QUESTION_PAUSE,
+    initial_pause=None,
+    swipe_time=QUESTION_SWIPE_TIME,
+    dock_pause=0.7,
+):
     question.move_to(DOWN * 0.2)
     if question.height > 5.45:
         question.scale_to_fit_height(5.45)
         question.move_to(DOWN * 0.2)
 
     scene.play(FadeIn(question, shift=UP * 0.15), run_time=1.3)
-    scene.wait(QUESTION_PAUSE + 0.5)
+    scene.wait(QUESTION_PAUSE + 0.5 if initial_pause is None else initial_pause)
 
     highlight = None
     for index in highlight_indices:
         if highlight is not None:
-            scene.play(*[FadeOut(h) for h in highlight], run_time=0.3)
-        highlight = swipe_in_highlight(scene, question.rows[index])
-        scene.wait(QUESTION_PAUSE)
+            scene.play(*[FadeOut(h) for h in highlight], run_time=0.25)
+        highlight = swipe_in_highlight(scene, question.rows[index], run_time=swipe_time)
+        scene.wait(highlight_pause)
 
     if highlight is not None:
-        scene.play(*[FadeOut(h) for h in highlight], run_time=0.55)
+        scene.play(*[FadeOut(h) for h in highlight], run_time=0.45)
 
     scale_factor = min(1, dock_width / question.width)
     scene.play(
-        question.animate.scale(scale_factor).next_to(header, DOWN, buff=0.3).to_edge(LEFT, buff=0.34),
+        question.animate.scale(scale_factor).next_to(header, DOWN, buff=0.36).to_edge(LEFT, buff=0.34),
         run_time=1.3,
     )
-    scene.wait(0.7)
+    scene.wait(dock_pause)
     return question
 
 
@@ -235,11 +281,11 @@ def make_answer_box(*mobjects, color=GOOD):
     return VGroup(box, content)
 
 
-def show_knowns(scene, items, side=RIGHT, y_shift=0.25):
+def show_knowns(scene, items, side=RIGHT, y_shift=0.25, wait_time=STEP_PAUSE):
     panel = place_knowns(make_knowns_panel(items), side=side, y_shift=y_shift)
     shift = LEFT * 0.2 if side is RIGHT else RIGHT * 0.2
     scene.play(FadeIn(panel, shift=shift), run_time=1.3)
-    scene.wait(STEP_PAUSE)
+    scene.wait(wait_time)
     return panel
 
 
@@ -265,7 +311,7 @@ class Intro(Scene):
         self.wait(0.6)
         self.play(FadeIn(level, shift=UP * 0.18), run_time=1.0)
         self.wait(0.5)
-        self.play(Create(wave), run_time=1.6)
+        self.play(Create(wave), run_time=3.5)
         self.wait(INTRO_HOLD)
         end_scene(self, run_time=1.3)
 
@@ -291,7 +337,17 @@ class Soal1(MovingCameraScene):
                 q_text("Pernyataan yang benar adalah . . ."),
             ],
         )
-        present_question(self, header, question, [0, 1, 3, 4, 5, 6, 7], dock_width=5.35)
+        present_question(
+            self,
+            header,
+            question,
+            [0, 1, 3, 4, 5, 6, 7],
+            dock_width=5.35,
+            highlight_pause=SOAL1_HIGHLIGHT_PAUSE,
+            initial_pause=3.2,
+            swipe_time=0.95,
+            dock_pause=1.2,
+        )
 
         knowns = show_knowns(
             self,
@@ -321,11 +377,11 @@ class Soal1(MovingCameraScene):
         compare = VGroup(compare_title, general, specific).arrange(DOWN, buff=0.28)
         compare.to_edge(LEFT, buff=0.72).shift(DOWN * 0.15)
         self.play(FadeIn(compare_title, shift=UP * 0.1), run_time=1.0)
-        self.wait(1.4)
+        self.wait(2.0)
         self.play(Write(general), run_time=1.7)
-        self.wait(STEP_PAUSE)
+        self.wait(SOAL1_FORMULA_PAUSE)
         self.play(Write(specific), run_time=1.7)
-        self.wait(STEP_PAUSE + 0.5)
+        self.wait(SOAL1_FORMULA_PAUSE + 1.0)
 
         checks = [
             (
@@ -353,14 +409,14 @@ class Soal1(MovingCameraScene):
                 self.play(FadeOut(active_check, shift=DOWN * 0.08), run_time=0.5)
             active_check = group
             self.play(FadeIn(group, shift=UP * 0.12), run_time=1.1)
-            self.wait(STEP_PAUSE)
+            self.wait(SOAL1_STEP_PAUSE)
 
         answer = make_answer_box(Text("Jawaban: A, B, dan D", font_size=30, color=GOOD, weight=BOLD))
         answer.move_to(DOWN * 2.95)
         self.play(FadeOut(active_check), run_time=0.5)
         self.wait(0.4)
         self.play(FadeIn(answer, scale=0.95), run_time=1.3)
-        self.wait(LONG_PAUSE)
+        self.wait(SOAL1_ANSWER_PAUSE)
 
         end_scene(self, run_time=1.2)
 
@@ -381,7 +437,17 @@ class Soal2(MovingCameraScene):
                 q_text("Bila diukur dari ujung terikat, maka perut yang ketiga terletak pada jarak . . ."),
             ],
         )
-        present_question(self, header, question, [0, 1, 2], dock_width=5.25)
+        present_question(
+            self,
+            header,
+            question,
+            [0, 1, 2],
+            dock_width=5.25,
+            highlight_pause=SOAL2_HIGHLIGHT_PAUSE,
+            initial_pause=3.0,
+            swipe_time=0.95,
+            dock_pause=1.0,
+        )
 
         knowns = show_knowns(
             self,
@@ -437,9 +503,10 @@ class Soal2(MovingCameraScene):
 
         self.play(Create(base_line), FadeIn(fixed_end), Write(fixed_label), Write(drive_label), run_time=1.5)
         self.wait(1.5)
-        self.add(wave)
+        self.play(Create(wave), run_time=1.6)
         wave.start_wave()
-        self.wait(6.0)
+        # VO cue: pause narration here and let the standing wave move visually.
+        self.wait(SOAL2_SILENT_WAVE_TIME)
 
         antinode_offsets = [0.5, 1.5, 2.5, 3.5]
         dots = VGroup()
@@ -452,12 +519,12 @@ class Soal2(MovingCameraScene):
             labels.add(label)
 
         self.play(FadeIn(dots), FadeIn(labels), run_time=1.3)
-        self.wait(STEP_PAUSE)
+        self.wait(SOAL2_STEP_PAUSE)
 
         third_x = x_start + 2.5 * meter_scale
         highlight = Circle(radius=0.34, color=BAD, stroke_width=4).move_to([third_x, wave_y, 0])
         self.play(Create(highlight), run_time=0.85)
-        self.wait(STEP_PAUSE)
+        self.wait(SOAL2_STEP_PAUSE)
 
         measure = DoubleArrow(
             [x_start, wave_y - 1.25, 0],
@@ -468,7 +535,7 @@ class Soal2(MovingCameraScene):
         )
         measure_label = MathTex(r"x_3 = 2{,}5\,\text{m}", font_size=30, color=ACCENT).next_to(measure, DOWN, buff=0.18)
         self.play(Create(measure), Write(measure_label), run_time=1.4)
-        self.wait(STEP_PAUSE)
+        self.wait(SOAL2_STEP_PAUSE)
 
         wave.stop_wave()
         self.play(
@@ -489,15 +556,16 @@ class Soal2(MovingCameraScene):
             if active is None:
                 self.play(Write(formula), run_time=1.5)
             else:
+                # VO cue: say the transition phrase before this formula appears.
                 self.play(ReplacementTransform(active, formula), run_time=1.4)
             active = formula
-            self.wait(STEP_PAUSE)
+            self.wait(SOAL2_FORMULA_PAUSE)
 
         answer = make_answer_box(Text("Jawaban: 2,5 m", font_size=30, color=GOOD, weight=BOLD))
         answer.move_to(DOWN * 2.25)
         self.wait(0.4)
         self.play(FadeIn(answer, scale=0.95), run_time=1.2)
-        self.wait(LONG_PAUSE)
+        self.wait(SOAL2_ANSWER_PAUSE)
 
         end_scene(self, run_time=1.2)
 
@@ -517,7 +585,17 @@ class Soal3(MovingCameraScene):
                 q_text("Tepat saat menyimpang 2 cm di atas titik seimbang, benda tersebut mendapat percepatan yang nilai dan arahnya . . ."),
             ],
         )
-        present_question(self, header, question, [0, 1], dock_width=5.25)
+        present_question(
+            self,
+            header,
+            question,
+            [0, 1],
+            dock_width=5.25,
+            highlight_pause=SOAL3_HIGHLIGHT_PAUSE,
+            initial_pause=2.8,
+            swipe_time=0.9,
+            dock_pause=0.9,
+        )
 
         knowns = show_knowns(
             self,
@@ -568,10 +646,19 @@ class Soal3(MovingCameraScene):
 
         self.play(Create(equilibrium_line), FadeIn(eq_label), Create(ceiling), Create(hatches), run_time=1.4)
         self.wait(1.0)
+        # Draw static initial-state versions (t=0: mass at top of swing)
+        init_mass_y = equilibrium_y + amp
+        init_spring = make_spring(spring_anchor, [-2.3, init_mass_y + 0.34, 0])
+        init_mass = Square(side_length=0.68, color=PRIMARY, fill_color=PRIMARY, fill_opacity=0.75).move_to([-2.3, init_mass_y, 0])
+        self.play(Create(init_spring), GrowFromCenter(init_mass), run_time=1.0)
+        self.wait(0.4)
+        # Swap to always_redraw versions in one frame — positions are identical at t=0
+        self.remove(init_spring, init_mass)
         self.add(spring, mass)
-        self.play(t_tracker.animate.set_value(2.5), run_time=5.0, rate_func=linear)
-        self.play(t_tracker.animate.set_value(3.0), run_time=1.4, rate_func=smooth)
-        self.wait(0.8)
+        # VO cue: narrate the observation while the object oscillates.
+        self.play(t_tracker.animate.set_value(3.2), run_time=SOAL3_OSCILLATION_TIME, rate_func=linear)
+        self.play(t_tracker.animate.set_value(3.5), run_time=1.4, rate_func=smooth)
+        self.wait(1.0)
 
         position_arrow = Arrow([-1.55, equilibrium_y, 0], [-1.55, equilibrium_y + 0.85, 0], color=PRIMARY, buff=0, stroke_width=4)
         position_label = MathTex(r"y = +2\,\text{cm}", font_size=25, color=PRIMARY).next_to(position_arrow, RIGHT, buff=0.16)
@@ -579,9 +666,9 @@ class Soal3(MovingCameraScene):
         accel_label = MathTex(r"\vec{a}", font_size=32, color=SECONDARY).next_to(accel_arrow, LEFT, buff=0.15)
 
         self.play(GrowArrow(position_arrow), Write(position_label), run_time=1.3)
-        self.wait(STEP_PAUSE)
+        self.wait(SOAL3_STEP_PAUSE)
         self.play(GrowArrow(accel_arrow), Write(accel_label), run_time=1.3)
-        self.wait(STEP_PAUSE)
+        self.wait(SOAL3_STEP_PAUSE)
 
         formulas = [
             MathTex(r"\omega = 2\pi f = 2\pi(5) = 10\pi\,\text{rad/s}", font_size=31, color=TEXT),
@@ -595,9 +682,10 @@ class Soal3(MovingCameraScene):
             if active is None:
                 self.play(Write(formula), run_time=1.4)
             else:
+                # VO cue: say the transition phrase before this formula appears.
                 self.play(ReplacementTransform(active, formula), run_time=1.4)
             active = formula
-            self.wait(STEP_PAUSE)
+            self.wait(SOAL3_FORMULA_PAUSE)
 
         answer = make_answer_box(
             MathTex(r"|a| = 2\pi^2\,\text{m/s}^2 \approx 19{,}74\,\text{m/s}^2", font_size=28, color=GOOD),
@@ -606,7 +694,7 @@ class Soal3(MovingCameraScene):
         answer.move_to(DOWN * 2.75 + RIGHT * 0.8)
         self.wait(0.4)
         self.play(FadeIn(answer, scale=0.95), run_time=1.3)
-        self.wait(LONG_PAUSE)
+        self.wait(SOAL3_ANSWER_PAUSE)
 
         end_scene(self, run_time=1.2)
 
@@ -626,7 +714,17 @@ class Soal4(MovingCameraScene):
                 q_text("Besar energi kinetik pada saat simpangan 2 cm adalah . . . (satuan dalam Joule)"),
             ],
         )
-        present_question(self, header, question, [0, 1], dock_width=5.25)
+        present_question(
+            self,
+            header,
+            question,
+            [0, 1],
+            dock_width=5.25,
+            highlight_pause=SOAL4_HIGHLIGHT_PAUSE,
+            initial_pause=2.8,
+            swipe_time=0.9,
+            dock_pause=0.9,
+        )
 
         knowns = show_knowns(
             self,
@@ -671,11 +769,12 @@ class Soal4(MovingCameraScene):
         self.play(Create(axes), run_time=1.1)
         self.wait(0.6)
         self.play(Create(amp_lines), Write(amp_label), run_time=1.2)
-        self.wait(STEP_PAUSE - 1.0)
+        self.wait(SOAL4_GRAPH_PAUSE - 1.0)
         self.play(Create(target_line), Write(y_label), FadeIn(dot, scale=1.5), run_time=1.3)
-        self.wait(STEP_PAUSE)
+        self.wait(SOAL4_GRAPH_PAUSE)
         self.play(FadeOut(VGroup(axes, amp_lines, target_line, amp_label, y_label, dot)), run_time=1.0)
-        self.wait(0.5)
+        # VO cue: explain why Ek depends on (A^2 - y^2) while the graph disappears.
+        self.wait(3.5)
 
         formulas = [
             MathTex(r"\omega = \frac{2\pi}{T} = \frac{2\pi}{0{,}1} = 20\pi", font_size=33, color=TEXT),
@@ -694,9 +793,10 @@ class Soal4(MovingCameraScene):
             if active is None:
                 self.play(Write(formula), run_time=1.4)
             else:
+                # VO cue: say the transition phrase before this formula appears.
                 self.play(ReplacementTransform(active, formula), run_time=1.4)
             active = formula
-            self.wait(STEP_PAUSE)
+            self.wait(SOAL4_FORMULA_PAUSE)
 
         answer = make_answer_box(
             MathTex(r"E_k = 0{,}024\pi^2\,\text{J}", font_size=30, color=GOOD),
@@ -705,7 +805,7 @@ class Soal4(MovingCameraScene):
         answer.move_to(DOWN * 2.45 + LEFT * 1.15)
         self.wait(0.4)
         self.play(FadeIn(answer, scale=0.95), run_time=1.2)
-        self.wait(LONG_PAUSE)
+        self.wait(SOAL4_ANSWER_PAUSE)
 
         end_scene(self, run_time=1.2)
 
@@ -725,7 +825,17 @@ class Soal5(MovingCameraScene):
                 q_text("maka besar energi potensial pada saat sudut fasenya 30° adalah . . . joule."),
             ],
         )
-        present_question(self, header, question, [0, 1], dock_width=5.25)
+        present_question(
+            self,
+            header,
+            question,
+            [0, 1],
+            dock_width=5.25,
+            highlight_pause=SOAL5_HIGHLIGHT_PAUSE,
+            initial_pause=2.8,
+            swipe_time=0.9,
+            dock_pause=0.9,
+        )
 
         knowns = show_knowns(
             self,
@@ -765,7 +875,8 @@ class Soal5(MovingCameraScene):
         self.play(Create(radius_line), Create(angle_arc), Write(angle_label), run_time=1.3)
         self.wait(1.0)
         self.play(FadeIn(proj_dot), Create(proj_line), Create(y_proj_line), Write(y_proj_label), run_time=1.4)
-        self.wait(STEP_PAUSE)
+        # VO cue: explain that the vertical projection gives y = A sin(theta).
+        self.wait(SOAL5_DIAGRAM_PAUSE)
 
         y_steps = VGroup(
             MathTex(r"y = A\sin\theta", font_size=31, color=PRIMARY),
@@ -774,7 +885,7 @@ class Soal5(MovingCameraScene):
         ).arrange(DOWN, buff=0.22).move_to(RIGHT * 1.05 + DOWN * 1.25)
         for step in y_steps:
             self.play(FadeIn(step, shift=UP * 0.1), run_time=1.1)
-            self.wait(STEP_PAUSE - 1.0)
+            self.wait(SOAL5_DIAGRAM_PAUSE - 2.0)
 
         self.wait(0.5)
         self.play(
@@ -796,9 +907,10 @@ class Soal5(MovingCameraScene):
             if active is None:
                 self.play(Write(formula), run_time=1.4)
             else:
+                # VO cue: say the transition phrase before this formula appears.
                 self.play(ReplacementTransform(active, formula), run_time=1.4)
             active = formula
-            self.wait(STEP_PAUSE)
+            self.wait(SOAL5_FORMULA_PAUSE)
 
         answer = make_answer_box(
             MathTex(r"E_p = 0{,}1\pi^2\,\text{J}", font_size=30, color=GOOD),
@@ -807,7 +919,7 @@ class Soal5(MovingCameraScene):
         answer.move_to(DOWN * 2.45 + LEFT * 1.05)
         self.wait(0.4)
         self.play(FadeIn(answer, scale=0.95), run_time=1.2)
-        self.wait(LONG_PAUSE)
+        self.wait(SOAL5_ANSWER_PAUSE)
 
         end_scene(self, run_time=1.2)
 
