@@ -2,7 +2,6 @@ from manim import *
 from manim_physics import StandingWave
 import numpy as np
 import textwrap
-from pathlib import Path
 
 BG_COLOR = "#0b1020"
 PANEL = "#111827"
@@ -18,7 +17,6 @@ QUESTION_BG = "#f8fafc"
 QUESTION_BAR = "#e2e8f0"
 QUESTION_INK = "#0f172a"
 UI_FONT = "Arial"
-QUESTION_DIR = Path(__file__).resolve().parent / "assets" / "questions"
 
 QUESTION_PAUSE = 2.8
 STEP_PAUSE = 3.8
@@ -135,40 +133,6 @@ def make_question_screenshot(title, rows, width=11.4):
     card.rows = body_rows
     return card
 
-
-def make_region_target(image, region):
-    x1, y1, x2, y2 = region
-    width = (x2 - x1) * image.width
-    height = (y2 - y1) * image.height
-    x = image.get_left()[0] + (x1 + x2) * image.width / 2
-    y = image.get_top()[1] - (y1 + y2) * image.height / 2
-    target = Rectangle(width=width, height=height, stroke_width=0, fill_opacity=0)
-    target.move_to([x, y, 0])
-    return target
-
-
-def make_question_image(filename, regions, width=11.2):
-    image_path = QUESTION_DIR / filename
-    image = ImageMobject(str(image_path))
-    image.set_resampling_algorithm(RESAMPLING_ALGORITHMS["lanczos"])
-    image.set_width(width)
-
-    frame = RoundedRectangle(
-        width=image.width + 0.16,
-        height=image.height + 0.16,
-        corner_radius=0.08,
-        stroke_color="#d1d5db",
-        stroke_width=1.5,
-        fill_color=WHITE,
-        fill_opacity=1,
-    )
-    frame.move_to(image)
-    frame.set_z_index(-1)
-
-    targets = Group(*[make_region_target(image, region) for region in regions])
-    card = Group(frame, image, targets)
-    card.rows = targets
-    return card
 
 
 def make_question_highlight(target, color=ACCENT):
@@ -294,22 +258,20 @@ class Soal1(MovingCameraScene):
         self.play(FadeIn(header), run_time=1.0)
         self.wait(0.5)
 
-        question = make_question_image(
-            "Soal1.jpeg",
-            [
-                (0.05, 0.03, 0.63, 0.12),
-                (0.05, 0.14, 0.94, 0.25),
-                (0.35, 0.30, 0.66, 0.43),
-                (0.05, 0.47, 0.95, 0.58),
-                (0.06, 0.585, 0.55, 0.645),
-                (0.06, 0.665, 0.53, 0.725),
-                (0.06, 0.745, 0.55, 0.805),
-                (0.06, 0.825, 0.52, 0.885),
-                (0.05, 0.92, 0.55, 0.99),
+        question = make_question_screenshot(
+            "Soal 1: Gelombang Berjalan",
+            rows=[
+                q_text("Gelombang transversal merambat sepanjang tali AB. Persamaan gelombang di titik B dinyatakan sebagai berikut:"),
+                q_math(r"y_B = 0{,}04\sin 8\pi\!\left(t_A + \dfrac{x}{2}\right)"),
+                q_text("Semua besaran menggunakan satuan dasar SI. Jika x adalah jarak AB, perhatikan pernyataan berikut:"),
+                q_text("(A)  Gelombang memiliki amplitudo 4 cm"),
+                q_text("(B)  Gelombang memiliki frekuensi 4 Hz"),
+                q_text("(C)  Gelombang memiliki periode 0,5 sekon"),
+                q_text("(D)  Cepat rambat gelombang 2 m/s"),
+                q_text("Pernyataan yang benar adalah . . ."),
             ],
-            width=9.8,
         )
-        present_question(self, header, question, [0, 2, 4, 5, 6, 7, 8], dock_width=5.35)
+        present_question(self, header, question, [0, 1, 3, 4, 5, 6, 7], dock_width=5.35)
 
         knowns = show_knowns(
             self,
@@ -391,17 +353,15 @@ class Soal2(MovingCameraScene):
         self.play(FadeIn(header), run_time=1.0)
         self.wait(0.5)
 
-        question = make_question_image(
-            "Soal2.jpeg",
-            [
-                (0.02, 0.06, 0.52, 0.25),
-                (0.02, 0.33, 0.55, 0.54),
-                (0.55, 0.50, 0.96, 0.69),
-                (0.02, 0.68, 0.92, 0.96),
+        question = make_question_screenshot(
+            "Soal 2: Gelombang Stasioner",
+            rows=[
+                q_text("Seutas tali panjang 4 m, salah satu ujungnya diikat dan ujung yang lain digetarkan terus menerus sehingga membentuk gelombang stasioner."),
+                q_text("Pada tali terbentuk 2 gelombang penuh."),
+                q_text("Bila diukur dari ujung terikat, maka perut yang ketiga terletak pada jarak . . ."),
             ],
-            width=11.2,
         )
-        present_question(self, header, question, [0, 2, 3], dock_width=5.25)
+        present_question(self, header, question, [0, 1, 2], dock_width=5.25)
 
         knowns = show_knowns(
             self,
@@ -530,17 +490,14 @@ class Soal3(MovingCameraScene):
         self.play(FadeIn(header), run_time=1.0)
         self.wait(0.5)
 
-        question = make_question_image(
-            "Soal3.jpeg",
-            [
-                (0.02, 0.05, 0.72, 0.26),
-                (0.02, 0.35, 0.85, 0.55),
-                (0.53, 0.35, 0.95, 0.72),
-                (0.02, 0.55, 0.45, 0.94),
+        question = make_question_screenshot(
+            "Soal 3: Percepatan Gerak Harmonik",
+            rows=[
+                q_text("Sebuah benda melakukan gerak harmonik arah vertikal dengan frekuensi 5 Hz."),
+                q_text("Tepat saat menyimpang 2 cm di atas titik seimbang, benda tersebut mendapat percepatan yang nilai dan arahnya . . ."),
             ],
-            width=11.2,
         )
-        present_question(self, header, question, [0, 1, 2, 3], dock_width=5.25)
+        present_question(self, header, question, [0, 1], dock_width=5.25)
 
         knowns = show_knowns(
             self,
@@ -642,17 +599,14 @@ class Soal4(MovingCameraScene):
         self.play(FadeIn(header), run_time=1.0)
         self.wait(0.5)
 
-        question = make_question_image(
-            "Soal4.jpeg",
-            [
-                (0.02, 0.06, 0.47, 0.26),
-                (0.02, 0.36, 0.62, 0.56),
-                (0.62, 0.36, 0.98, 0.75),
-                (0.02, 0.56, 0.99, 0.95),
+        question = make_question_screenshot(
+            "Soal 4: Energi Kinetik",
+            rows=[
+                q_text("Sebuah benda yang massanya 100 gram bergetar harmonik dengan periode 1/10 detik dan amplitudo 4 cm."),
+                q_text("Besar energi kinetik pada saat simpangan 2 cm adalah . . . (satuan dalam Joule)"),
             ],
-            width=11.2,
         )
-        present_question(self, header, question, [0, 1, 2], dock_width=5.25)
+        present_question(self, header, question, [0, 1], dock_width=5.25)
 
         knowns = show_knowns(
             self,
@@ -744,17 +698,14 @@ class Soal5(MovingCameraScene):
         self.play(FadeIn(header), run_time=1.0)
         self.wait(0.5)
 
-        question = make_question_image(
-            "Soal5.jpeg",
-            [
-                (0.02, 0.06, 0.48, 0.27),
-                (0.02, 0.38, 0.47, 0.58),
-                (0.47, 0.38, 0.82, 0.78),
-                (0.82, 0.38, 0.99, 0.78),
+        question = make_question_screenshot(
+            "Soal 5: Energi Potensial",
+            rows=[
+                q_text("Sebuah partikel bermassa 50 gram bergetar harmonis dengan frekuensi 100 Hz dan amplitudo 2 cm,"),
+                q_text("maka besar energi potensial pada saat sudut fasenya 30° adalah . . . joule."),
             ],
-            width=11.2,
         )
-        present_question(self, header, question, [0, 1, 2, 3], dock_width=5.25)
+        present_question(self, header, question, [0, 1], dock_width=5.25)
 
         knowns = show_knowns(
             self,
