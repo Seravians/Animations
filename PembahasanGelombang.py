@@ -142,7 +142,7 @@ def make_question_highlight(target, color=ACCENT):
     return rect
 
 
-def swipe_in_highlight(scene, target, color=ACCENT, run_time=0.55):
+def _swipe_single_highlight(scene, target, color=ACCENT, run_time=0.55):
     full = make_question_highlight(target, color)
     left_anchor = full.get_left()
 
@@ -154,6 +154,13 @@ def swipe_in_highlight(scene, target, color=ACCENT, run_time=0.55):
     proxy.stretch(1e-4, 0, about_point=left_anchor)
     scene.play(UpdateFromAlphaFunc(proxy, update), run_time=run_time, rate_func=linear)
     return proxy
+
+
+def swipe_in_highlight(scene, target, color=ACCENT, run_time=0.55):
+    # q_text rows are VGroups of Text lines when text wraps — highlight each line separately
+    if isinstance(target, VGroup) and len(target) > 1 and isinstance(target[0], Text):
+        return [_swipe_single_highlight(scene, line, color, run_time=0.45) for line in target]
+    return [_swipe_single_highlight(scene, target, color, run_time)]
 
 
 def present_question(scene, header, question, highlight_indices, dock_width=5.35):
@@ -168,12 +175,12 @@ def present_question(scene, header, question, highlight_indices, dock_width=5.35
     highlight = None
     for index in highlight_indices:
         if highlight is not None:
-            scene.play(FadeOut(highlight), run_time=0.3)
+            scene.play(*[FadeOut(h) for h in highlight], run_time=0.3)
         highlight = swipe_in_highlight(scene, question.rows[index])
         scene.wait(QUESTION_PAUSE)
 
     if highlight is not None:
-        scene.play(FadeOut(highlight), run_time=0.55)
+        scene.play(*[FadeOut(h) for h in highlight], run_time=0.55)
 
     scale_factor = min(1, dock_width / question.width)
     scene.play(
