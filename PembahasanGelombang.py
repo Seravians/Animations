@@ -178,7 +178,7 @@ def make_question_highlight(target, color=ACCENT):
     return rect
 
 
-def present_question(scene, question, highlight_indices, dock_width=5.35):
+def present_question(scene, header, question, highlight_indices, dock_width=5.35):
     question.move_to(DOWN * 0.2)
     if question.height > 5.45:
         question.scale_to_fit_height(5.45)
@@ -202,7 +202,7 @@ def present_question(scene, question, highlight_indices, dock_width=5.35):
 
     scale_factor = min(1, dock_width / question.width)
     scene.play(
-        question.animate.scale(scale_factor).to_corner(UL, buff=0.34).shift(DOWN * 0.72),
+        question.animate.scale(scale_factor).next_to(header, DOWN, buff=0.3).to_edge(LEFT, buff=0.34),
         run_time=1.3,
     )
     scene.wait(0.7)
@@ -309,7 +309,7 @@ class Soal1(MovingCameraScene):
             ],
             width=9.8,
         )
-        present_question(self, question, [0, 2, 4, 5, 6, 7, 8], dock_width=5.35)
+        present_question(self, header, question, [0, 2, 4, 5, 6, 7, 8], dock_width=5.35)
 
         knowns = show_knowns(
             self,
@@ -320,7 +320,7 @@ class Soal1(MovingCameraScene):
             ],
             side=RIGHT,
             y_shift=0.35,
-        )
+    )
         self.wait(1.0)
         self.play(FadeOut(question), run_time=0.85)
         self.wait(0.6)
@@ -401,7 +401,7 @@ class Soal2(MovingCameraScene):
             ],
             width=11.2,
         )
-        present_question(self, question, [0, 2, 3], dock_width=5.25)
+        present_question(self, header, question, [0, 2, 3], dock_width=5.25)
 
         knowns = show_knowns(
             self,
@@ -540,7 +540,7 @@ class Soal3(MovingCameraScene):
             ],
             width=11.2,
         )
-        present_question(self, question, [0, 1, 2, 3], dock_width=5.25)
+        present_question(self, header, question, [0, 1, 2, 3], dock_width=5.25)
 
         knowns = show_knowns(
             self,
@@ -652,7 +652,7 @@ class Soal4(MovingCameraScene):
             ],
             width=11.2,
         )
-        present_question(self, question, [0, 1, 2], dock_width=5.25)
+        present_question(self, header, question, [0, 1, 2], dock_width=5.25)
 
         knowns = show_knowns(
             self,
@@ -754,7 +754,7 @@ class Soal5(MovingCameraScene):
             ],
             width=11.2,
         )
-        present_question(self, question, [0, 1, 2, 3], dock_width=5.25)
+        present_question(self, header, question, [0, 1, 2, 3], dock_width=5.25)
 
         knowns = show_knowns(
             self,
