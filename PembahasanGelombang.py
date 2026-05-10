@@ -3,7 +3,7 @@ from manim_physics import StandingWave
 import numpy as np
 import textwrap
 
-BG_COLOR = "#0b1020"
+BG_COLOR = "#080c18"
 PANEL = "#111827"
 PANEL_STROKE = "#24344d"
 PRIMARY = BLUE_C
@@ -20,7 +20,7 @@ UI_FONT = "Arial"
 
 # Voiceover timing profile
 # Rough targets from storyboard:
-# Intro ~30s | Soal 1 ~2:30 | Soal 2 ~2:25 | Soal 3 ~1:40 | Soal 4 ~1:30 | Soal 5 ~2:00
+# Intro ~30s | Soal 1 ~3:00 | Soal 2 ~2:50 | Soal 3 ~2:10 | Soal 4 ~2:00 | Soal 5 ~2:30
 QUESTION_PAUSE = 2.6          # default 2-3 second hold after each question highlight
 QUESTION_SWIPE_TIME = 0.85    # slow left-to-right highlight sweep, easier to sync to VO
 STEP_PAUSE = 5.2              # default pause after a reasoning/formula step
@@ -28,32 +28,32 @@ FORMULA_PAUSE = 6.5           # default pause after transformed formulas
 LONG_PAUSE = 8.0
 INTRO_HOLD = 17.0             # long final intro hold so total intro is around 30s
 
-SOAL1_HIGHLIGHT_PAUSE = 2.8
-SOAL1_STEP_PAUSE = 8.5
-SOAL1_FORMULA_PAUSE = 9.5
-SOAL1_ANSWER_PAUSE = 12.0
+SOAL1_HIGHLIGHT_PAUSE = 4.0
+SOAL1_STEP_PAUSE = 16.0
+SOAL1_FORMULA_PAUSE = 17.0
+SOAL1_ANSWER_PAUSE = 13.65
 
-SOAL2_HIGHLIGHT_PAUSE = 2.9
+SOAL2_HIGHLIGHT_PAUSE = 4.0
 SOAL2_SILENT_WAVE_TIME = 6.0  # storyboard note: no narration here; let the standing wave move
-SOAL2_STEP_PAUSE = 9.0
-SOAL2_FORMULA_PAUSE = 9.5
-SOAL2_ANSWER_PAUSE = 12.0
+SOAL2_STEP_PAUSE = 13.0
+SOAL2_FORMULA_PAUSE = 14.0
+SOAL2_ANSWER_PAUSE = 17.2
 
-SOAL3_HIGHLIGHT_PAUSE = 2.7
-SOAL3_OSCILLATION_TIME = 7.0  # storyboard note: narrate observation during spring motion
-SOAL3_STEP_PAUSE = 5.5
-SOAL3_FORMULA_PAUSE = 6.8
-SOAL3_ANSWER_PAUSE = 9.5
+SOAL3_HIGHLIGHT_PAUSE = 4.0
+SOAL3_OSCILLATION_TIME = 9.0  # storyboard note: narrate observation during spring motion
+SOAL3_STEP_PAUSE = 8.0
+SOAL3_FORMULA_PAUSE = 11.0
+SOAL3_ANSWER_PAUSE = 15.25
 
-SOAL4_HIGHLIGHT_PAUSE = 2.7
-SOAL4_GRAPH_PAUSE = 5.4
-SOAL4_FORMULA_PAUSE = 6.8
-SOAL4_ANSWER_PAUSE = 9.0
+SOAL4_HIGHLIGHT_PAUSE = 4.0
+SOAL4_GRAPH_PAUSE = 8.0
+SOAL4_FORMULA_PAUSE = 11.0
+SOAL4_ANSWER_PAUSE = 16.25
 
-SOAL5_HIGHLIGHT_PAUSE = 2.8
-SOAL5_DIAGRAM_PAUSE = 7.5
-SOAL5_FORMULA_PAUSE = 8.5
-SOAL5_ANSWER_PAUSE = 11.0
+SOAL5_HIGHLIGHT_PAUSE = 4.0
+SOAL5_DIAGRAM_PAUSE = 9.0
+SOAL5_FORMULA_PAUSE = 11.5
+SOAL5_ANSWER_PAUSE = 13.85
 
 config.background_color = BG_COLOR
 
@@ -281,6 +281,18 @@ def make_answer_box(*mobjects, color=GOOD):
     return VGroup(box, content)
 
 
+def make_var_legend(items):
+    """items: list of (latex_symbol, plain_text_description)"""
+    rows = VGroup(*[
+        VGroup(
+            MathTex(sym, font_size=19, color=DIM),
+            Text(": " + desc, font_size=16, color=DIM),
+        ).arrange(RIGHT, buff=0.12, aligned_edge=DOWN)
+        for sym, desc in items
+    ]).arrange(DOWN, aligned_edge=LEFT, buff=0.14)
+    return rows
+
+
 def show_knowns(scene, items, side=RIGHT, y_shift=0.25, wait_time=STEP_PAUSE):
     panel = place_knowns(make_knowns_panel(items), side=side, y_shift=y_shift)
     shift = LEFT * 0.2 if side is RIGHT else RIGHT * 0.2
@@ -359,6 +371,15 @@ class Soal1(MovingCameraScene):
             side=RIGHT,
             y_shift=0.35,
     )
+        legend = make_var_legend([
+            (r"A",       "amplitudo"),
+            (r"\omega",  "kecepatan sudut"),
+            (r"v",       "cepat rambat"),
+            (r"f",       "frekuensi"),
+            (r"T",       "periode"),
+        ])
+        legend.next_to(knowns, DOWN, buff=0.35)
+        self.play(FadeIn(legend, shift=LEFT * 0.15), run_time=0.8)
         self.wait(1.0)
         self.play(FadeOut(question), run_time=0.85)
         self.wait(0.6)
@@ -375,7 +396,7 @@ class Soal1(MovingCameraScene):
             color=TEXT,
         )
         compare = VGroup(compare_title, general, specific).arrange(DOWN, buff=0.28)
-        compare.to_edge(LEFT, buff=0.72).shift(DOWN * 0.15)
+        compare.to_edge(LEFT, buff=0.72).shift(UP * 0.2)
         self.play(FadeIn(compare_title, shift=UP * 0.1), run_time=1.0)
         self.wait(2.0)
         self.play(Write(general), run_time=1.7)
@@ -385,36 +406,35 @@ class Soal1(MovingCameraScene):
 
         checks = [
             (
-                MathTex(r"A = 0{,}04\,\text{m} = 4\,\text{cm}", font_size=32, color=TEXT),
-                Text("Pernyataan A: Benar", font_size=23, color=GOOD, weight=BOLD),
+                MathTex(r"A = 0{,}04\,\text{m} = 4\,\text{cm}", font_size=26, color=TEXT),
+                Text("(A) Benar", font_size=18, color=GOOD, weight=BOLD),
             ),
             (
-                MathTex(r"f = \frac{\omega}{2\pi} = \frac{8\pi}{2\pi} = 4\,\text{Hz}", font_size=32, color=TEXT),
-                Text("Pernyataan B: Benar", font_size=23, color=GOOD, weight=BOLD),
+                MathTex(r"f = \frac{\omega}{2\pi} = \frac{8\pi}{2\pi} = 4\,\text{Hz}", font_size=26, color=TEXT),
+                Text("(B) Benar", font_size=18, color=GOOD, weight=BOLD),
             ),
             (
-                MathTex(r"T = \frac{1}{f} = \frac{1}{4} = 0{,}25\,\text{s}", font_size=32, color=TEXT),
-                Text("Pernyataan C: Salah", font_size=23, color=BAD, weight=BOLD),
+                MathTex(r"T = \frac{1}{f} = \frac{1}{4} = 0{,}25\,\text{s}", font_size=26, color=TEXT),
+                Text("(C) Salah", font_size=18, color=BAD, weight=BOLD),
             ),
             (
-                MathTex(r"v = 2\,\text{m/s}", font_size=32, color=TEXT),
-                Text("Pernyataan D: Benar", font_size=23, color=GOOD, weight=BOLD),
+                MathTex(r"v = 2\,\text{m/s}", font_size=26, color=TEXT),
+                Text("(D) Benar", font_size=18, color=GOOD, weight=BOLD),
             ),
         ]
 
-        active_check = None
-        for formula, verdict in checks:
-            group = VGroup(formula, verdict).arrange(DOWN, buff=0.18).move_to(DOWN * 2.05 + LEFT * 1.55)
-            if active_check is not None:
-                self.play(FadeOut(active_check, shift=DOWN * 0.08), run_time=0.5)
-            active_check = group
-            self.play(FadeIn(group, shift=UP * 0.12), run_time=1.1)
+        check_rows = VGroup(*[
+            VGroup(formula, verdict).arrange(RIGHT, buff=0.45)
+            for formula, verdict in checks
+        ]).arrange(DOWN, aligned_edge=LEFT, buff=0.28)
+        check_rows.next_to(compare, DOWN, buff=0.4, aligned_edge=LEFT)
+
+        for row in check_rows:
+            self.play(FadeIn(row, shift=UP * 0.1), run_time=0.9)
             self.wait(SOAL1_STEP_PAUSE)
 
-        answer = make_answer_box(Text("Jawaban: A, B, dan D", font_size=30, color=GOOD, weight=BOLD))
-        answer.move_to(DOWN * 2.95)
-        self.play(FadeOut(active_check), run_time=0.5)
-        self.wait(0.4)
+        answer = make_answer_box(Text("Jawaban: A, B, dan D", font_size=28, color=GOOD, weight=BOLD))
+        answer.next_to(legend, DOWN, buff=0.3)
         self.play(FadeIn(answer, scale=0.95), run_time=1.3)
         self.wait(SOAL1_ANSWER_PAUSE)
 
@@ -460,6 +480,14 @@ class Soal2(MovingCameraScene):
             side=RIGHT,
             y_shift=0.35,
         )
+        legend = make_var_legend([
+            (r"L",       "panjang tali"),
+            (r"\lambda", "panjang gelombang"),
+            (r"n",       "nomor perut"),
+            (r"x_n",     "letak perut ke-n"),
+        ])
+        legend.next_to(knowns, DOWN, buff=0.35)
+        self.play(FadeIn(legend, shift=LEFT * 0.15), run_time=0.8)
         self.wait(1.0)
         self.play(FadeOut(question), run_time=0.85)
         self.wait(0.6)
@@ -544,26 +572,20 @@ class Soal2(MovingCameraScene):
         )
         self.wait(0.5)
 
-        formulas = [
-            MathTex(r"\lambda = \frac{4}{2} = 2\,\text{m}", font_size=38, color=TEXT),
-            MathTex(r"x_n = (2n - 1)\frac{\lambda}{4}", font_size=38, color=PRIMARY),
-            MathTex(r"x_3 = (2\cdot3 - 1)\frac{2}{4}", font_size=38, color=TEXT),
-            MathTex(r"x_3 = 2{,}5\,\text{m}", font_size=42, color=GOOD),
-        ]
-        active = None
-        for formula in formulas:
-            formula.move_to(DOWN * 0.65)
-            if active is None:
-                self.play(Write(formula), run_time=1.5)
-            else:
-                # VO cue: say the transition phrase before this formula appears.
-                self.play(ReplacementTransform(active, formula), run_time=1.4)
-            active = formula
+        steps = VGroup(
+            MathTex(r"\lambda = \frac{L}{n_{\text{gel}}} = \frac{4}{2} = 2\,\text{m}", font_size=34, color=TEXT),
+            MathTex(r"x_n = (2n - 1)\frac{\lambda}{4}", font_size=34, color=PRIMARY),
+            MathTex(r"x_3 = (2 \cdot 3 - 1)\frac{2}{4}", font_size=34, color=TEXT),
+            MathTex(r"x_3 = 2{,}5\,\text{m}", font_size=38, color=GOOD),
+        ).arrange(DOWN, aligned_edge=LEFT, buff=0.35)
+        steps.to_edge(LEFT, buff=0.8).shift(DOWN * 0.3)
+
+        for step in steps:
+            self.play(Write(step), run_time=1.5)
             self.wait(SOAL2_FORMULA_PAUSE)
 
         answer = make_answer_box(Text("Jawaban: 2,5 m", font_size=30, color=GOOD, weight=BOLD))
-        answer.move_to(DOWN * 2.25)
-        self.wait(0.4)
+        answer.next_to(legend, DOWN, buff=0.3)
         self.play(FadeIn(answer, scale=0.95), run_time=1.2)
         self.wait(SOAL2_ANSWER_PAUSE)
 
@@ -607,6 +629,14 @@ class Soal3(MovingCameraScene):
             side=RIGHT,
             y_shift=0.35,
         )
+        legend = make_var_legend([
+            (r"f",      "frekuensi"),
+            (r"\omega", "kecepatan sudut"),
+            (r"y",      "simpangan"),
+            (r"a",      "percepatan"),
+        ])
+        legend.next_to(knowns, DOWN, buff=0.35)
+        self.play(FadeIn(legend, shift=LEFT * 0.15), run_time=0.8)
         self.wait(1.0)
         self.play(FadeOut(question), run_time=0.85)
         self.wait(0.6)
@@ -670,29 +700,33 @@ class Soal3(MovingCameraScene):
         self.play(GrowArrow(accel_arrow), Write(accel_label), run_time=1.3)
         self.wait(SOAL3_STEP_PAUSE)
 
-        formulas = [
-            MathTex(r"\omega = 2\pi f = 2\pi(5) = 10\pi\,\text{rad/s}", font_size=31, color=TEXT),
-            MathTex(r"a = -\omega^2 y", font_size=38, color=PRIMARY),
-            MathTex(r"a = -(10\pi)^2(0{,}02)", font_size=36, color=TEXT),
-            MathTex(r"a = -2\pi^2\,\text{m/s}^2", font_size=38, color=ACCENT),
-        ]
-        active = None
-        for formula in formulas:
-            formula.move_to(RIGHT * 1.05 + DOWN * 1.35)
-            if active is None:
-                self.play(Write(formula), run_time=1.4)
-            else:
-                # VO cue: say the transition phrase before this formula appears.
-                self.play(ReplacementTransform(active, formula), run_time=1.4)
-            active = formula
+        # Clear always_redraw updaters so the spring/mass can be faded out cleanly,
+        # freeing the left side for the algebraic steps.
+        spring.clear_updaters()
+        mass.clear_updaters()
+        self.play(
+            FadeOut(spring), FadeOut(mass),
+            FadeOut(ceiling), FadeOut(hatches),
+            run_time=0.8,
+        )
+
+        steps = VGroup(
+            MathTex(r"\omega = 2\pi f = 2\pi(5) = 10\pi\,\text{rad/s}", font_size=30, color=TEXT),
+            MathTex(r"a = -\omega^2 y", font_size=36, color=PRIMARY),
+            MathTex(r"a = -(10\pi)^2(0{,}02)", font_size=34, color=TEXT),
+            MathTex(r"a = -2\pi^2\,\text{m/s}^2", font_size=36, color=ACCENT),
+        ).arrange(DOWN, aligned_edge=LEFT, buff=0.3)
+        steps.to_edge(LEFT, buff=0.72).shift(DOWN * 2.3)
+
+        for step in steps:
+            self.play(Write(step), run_time=1.4)
             self.wait(SOAL3_FORMULA_PAUSE)
 
         answer = make_answer_box(
-            MathTex(r"|a| = 2\pi^2\,\text{m/s}^2 \approx 19{,}74\,\text{m/s}^2", font_size=28, color=GOOD),
-            Text("Arah ke bawah, menuju titik seimbang", font_size=23, color=GOOD, weight=BOLD),
+            MathTex(r"|a| = 2\pi^2 \approx 19{,}74\,\text{m/s}^2", font_size=26, color=GOOD),
+            Text("Arah ke bawah, menuju titik seimbang", font_size=21, color=GOOD, weight=BOLD),
         )
-        answer.move_to(DOWN * 2.75 + RIGHT * 0.8)
-        self.wait(0.4)
+        answer.next_to(legend, DOWN, buff=0.3)
         self.play(FadeIn(answer, scale=0.95), run_time=1.3)
         self.wait(SOAL3_ANSWER_PAUSE)
 
@@ -737,6 +771,14 @@ class Soal4(MovingCameraScene):
             side=RIGHT,
             y_shift=0.28,
         )
+        legend = make_var_legend([
+            (r"\omega", "kecepatan sudut"),
+            (r"A",      "amplitudo"),
+            (r"y",      "simpangan"),
+            (r"E_k",    "energi kinetik"),
+        ])
+        legend.next_to(knowns, DOWN, buff=0.35)
+        self.play(FadeIn(legend, shift=LEFT * 0.15), run_time=0.8)
         self.wait(1.0)
         self.play(FadeOut(question), run_time=0.85)
         self.wait(0.6)
@@ -776,34 +818,23 @@ class Soal4(MovingCameraScene):
         # VO cue: explain why Ek depends on (A^2 - y^2) while the graph disappears.
         self.wait(3.5)
 
-        formulas = [
-            MathTex(r"\omega = \frac{2\pi}{T} = \frac{2\pi}{0{,}1} = 20\pi", font_size=33, color=TEXT),
-            MathTex(r"E_k = \frac{1}{2}m\omega^2(A^2-y^2)", font_size=38, color=PRIMARY),
-            MathTex(
-                r"E_k = \frac{1}{2}(0{,}1)(20\pi)^2[(0{,}04)^2-(0{,}02)^2]",
-                font_size=28,
-                color=TEXT,
-            ),
-            MathTex(r"E_k = 0{,}024\pi^2\,\text{J}", font_size=40, color=ACCENT),
-        ]
+        steps = VGroup(
+            MathTex(r"\omega = \frac{2\pi}{T} = \frac{2\pi}{0{,}1} = 20\pi\,\text{rad/s}", font_size=30, color=TEXT),
+            MathTex(r"E_k = \frac{1}{2}m\omega^2(A^2 - y^2)", font_size=34, color=PRIMARY),
+            MathTex(r"E_k = \frac{1}{2}(0{,}1)(20\pi)^2\bigl[(0{,}04)^2-(0{,}02)^2\bigr]", font_size=26, color=TEXT),
+            MathTex(r"E_k = 0{,}024\pi^2\,\text{J}", font_size=36, color=ACCENT),
+        ).arrange(DOWN, aligned_edge=LEFT, buff=0.32)
+        steps.to_edge(LEFT, buff=0.72).shift(DOWN * 0.3)
 
-        active = None
-        for formula in formulas:
-            formula.move_to(LEFT * 1.35 + DOWN * 0.35)
-            if active is None:
-                self.play(Write(formula), run_time=1.4)
-            else:
-                # VO cue: say the transition phrase before this formula appears.
-                self.play(ReplacementTransform(active, formula), run_time=1.4)
-            active = formula
+        for step in steps:
+            self.play(Write(step), run_time=1.4)
             self.wait(SOAL4_FORMULA_PAUSE)
 
         answer = make_answer_box(
-            MathTex(r"E_k = 0{,}024\pi^2\,\text{J}", font_size=30, color=GOOD),
-            MathTex(r"\approx 0{,}237\,\text{J}", font_size=28, color=GOOD),
+            MathTex(r"E_k = 0{,}024\pi^2\,\text{J}", font_size=28, color=GOOD),
+            MathTex(r"\approx 0{,}237\,\text{J}", font_size=26, color=GOOD),
         )
-        answer.move_to(DOWN * 2.45 + LEFT * 1.15)
-        self.wait(0.4)
+        answer.next_to(legend, DOWN, buff=0.3)
         self.play(FadeIn(answer, scale=0.95), run_time=1.2)
         self.wait(SOAL4_ANSWER_PAUSE)
 
@@ -849,6 +880,16 @@ class Soal5(MovingCameraScene):
             y_shift=0.32,
         )
         self.wait(1.0)
+
+        legend = make_var_legend([
+            (r"\omega", "kecepatan sudut"),
+            (r"\theta", "sudut fase"),
+            (r"y",      "simpangan"),
+            (r"E_p",    "energi potensial"),
+        ])
+        legend.next_to(knowns, DOWN, buff=0.35)
+        self.play(FadeIn(legend, shift=LEFT * 0.15), run_time=0.8)
+
         self.play(FadeOut(question), run_time=0.85)
         self.wait(0.6)
 
@@ -894,30 +935,24 @@ class Soal5(MovingCameraScene):
         )
         self.wait(0.5)
 
-        formulas = [
-            MathTex(r"\omega = 2\pi f = 200\pi\,\text{rad/s}", font_size=34, color=TEXT),
-            MathTex(r"E_p = \frac{1}{2}m\omega^2y^2", font_size=40, color=PRIMARY),
-            MathTex(r"E_p = \frac{1}{2}(0{,}05)(200\pi)^2(0{,}01)^2", font_size=32, color=TEXT),
-            MathTex(r"E_p = 0{,}1\pi^2\,\text{J}", font_size=40, color=ACCENT),
-        ]
+        steps = VGroup(
+            MathTex(r"\omega = 2\pi f = 2\pi(100) = 200\pi\,\text{rad/s}", font_size=30, color=TEXT),
+            MathTex(r"y = A\sin\theta = 0{,}02\sin 30^\circ = 0{,}01\,\text{m}", font_size=30, color=TEXT),
+            MathTex(r"E_p = \frac{1}{2}m\omega^2 y^2", font_size=34, color=PRIMARY),
+            MathTex(r"E_p = \frac{1}{2}(0{,}05)(200\pi)^2(0{,}01)^2", font_size=28, color=TEXT),
+            MathTex(r"E_p = 0{,}1\pi^2\,\text{J}", font_size=36, color=ACCENT),
+        ).arrange(DOWN, aligned_edge=LEFT, buff=0.3)
+        steps.to_edge(LEFT, buff=0.72).shift(DOWN * 0.2)
 
-        active = None
-        for formula in formulas:
-            formula.move_to(LEFT * 1.25 + DOWN * 0.35)
-            if active is None:
-                self.play(Write(formula), run_time=1.4)
-            else:
-                # VO cue: say the transition phrase before this formula appears.
-                self.play(ReplacementTransform(active, formula), run_time=1.4)
-            active = formula
+        for step in steps:
+            self.play(Write(step), run_time=1.4)
             self.wait(SOAL5_FORMULA_PAUSE)
 
         answer = make_answer_box(
-            MathTex(r"E_p = 0{,}1\pi^2\,\text{J}", font_size=30, color=GOOD),
-            MathTex(r"\approx 0{,}987\,\text{J}", font_size=28, color=GOOD),
+            MathTex(r"E_p = 0{,}1\pi^2\,\text{J}", font_size=28, color=GOOD),
+            MathTex(r"\approx 0{,}987\,\text{J}", font_size=26, color=GOOD),
         )
-        answer.move_to(DOWN * 2.45 + LEFT * 1.05)
-        self.wait(0.4)
+        answer.next_to(legend, DOWN, buff=0.3)
         self.play(FadeIn(answer, scale=0.95), run_time=1.2)
         self.wait(SOAL5_ANSWER_PAUSE)
 
