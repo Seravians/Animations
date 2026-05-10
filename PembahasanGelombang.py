@@ -434,7 +434,7 @@ class Soal1(MovingCameraScene):
             self.wait(SOAL1_STEP_PAUSE)
 
         answer = make_answer_box(Text("Jawaban: A, B, dan D", font_size=28, color=GOOD, weight=BOLD))
-        answer.next_to(legend, DOWN, buff=0.3)
+        answer.to_corner(DR, buff=0.3)
         self.play(FadeIn(answer, scale=0.95), run_time=1.3)
         self.wait(SOAL1_ANSWER_PAUSE)
 
@@ -719,7 +719,7 @@ class Soal3(MovingCameraScene):
             MathTex(r"a = -(10\pi)^2(0{,}02)", font_size=34, color=TEXT),
             MathTex(r"a = -2\pi^2\,\text{m/s}^2", font_size=36, color=ACCENT),
         ).arrange(DOWN, aligned_edge=LEFT, buff=0.3)
-        steps.to_edge(LEFT, buff=0.72).shift(DOWN * 2.3)
+        steps.to_edge(LEFT, buff=0.72).shift(DOWN * 0.5)
 
         for step in steps:
             self.play(Write(step), run_time=1.4)
@@ -729,9 +729,7 @@ class Soal3(MovingCameraScene):
             MathTex(r"|a| = 2\pi^2 \approx 19{,}74\,\text{m/s}^2", font_size=26, color=GOOD),
             Text("Arah ke bawah,\nmenuju titik seimbang", font_size=17, color=GOOD, weight=BOLD),
         )
-        answer.next_to(legend, DOWN, buff=0.3)
-        if answer.get_right()[0] > config.frame_width / 2 - 0.25:
-            answer.shift(LEFT * (answer.get_right()[0] - config.frame_width / 2 + 0.25))
+        answer.next_to(steps, DOWN, buff=0.4).align_to(steps, LEFT)
         self.play(FadeIn(answer, scale=0.95), run_time=1.3)
         self.wait(SOAL3_ANSWER_PAUSE)
 
@@ -839,7 +837,7 @@ class Soal4(MovingCameraScene):
             MathTex(r"E_k = 0{,}024\pi^2\,\text{J}", font_size=28, color=GOOD),
             MathTex(r"\approx 0{,}237\,\text{J}", font_size=26, color=GOOD),
         )
-        answer.next_to(legend, DOWN, buff=0.3)
+        answer.next_to(steps, DOWN, buff=0.4).align_to(steps, LEFT)
         self.play(FadeIn(answer, scale=0.95), run_time=1.2)
         self.wait(SOAL4_ANSWER_PAUSE)
 
@@ -957,7 +955,7 @@ class Soal5(MovingCameraScene):
             MathTex(r"E_p = 0{,}1\pi^2\,\text{J}", font_size=28, color=GOOD),
             MathTex(r"\approx 0{,}987\,\text{J}", font_size=26, color=GOOD),
         )
-        answer.next_to(legend, DOWN, buff=0.3)
+        answer.next_to(steps, DOWN, buff=0.35).align_to(steps, LEFT)
         self.play(FadeIn(answer, scale=0.95), run_time=1.2)
         self.wait(SOAL5_ANSWER_PAUSE)
 
