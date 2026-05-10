@@ -707,6 +707,9 @@ class Soal3(MovingCameraScene):
         self.play(
             FadeOut(spring), FadeOut(mass),
             FadeOut(ceiling), FadeOut(hatches),
+            FadeOut(equilibrium_line), FadeOut(eq_label),
+            FadeOut(position_arrow), FadeOut(position_label),
+            FadeOut(accel_arrow), FadeOut(accel_label),
             run_time=0.8,
         )
 
@@ -724,9 +727,11 @@ class Soal3(MovingCameraScene):
 
         answer = make_answer_box(
             MathTex(r"|a| = 2\pi^2 \approx 19{,}74\,\text{m/s}^2", font_size=26, color=GOOD),
-            Text("Arah ke bawah, menuju titik seimbang", font_size=21, color=GOOD, weight=BOLD),
+            Text("Arah ke bawah,\nmenuju titik seimbang", font_size=17, color=GOOD, weight=BOLD),
         )
         answer.next_to(legend, DOWN, buff=0.3)
+        if answer.get_right()[0] > config.frame_width / 2 - 0.25:
+            answer.shift(LEFT * (answer.get_right()[0] - config.frame_width / 2 + 0.25))
         self.play(FadeIn(answer, scale=0.95), run_time=1.3)
         self.wait(SOAL3_ANSWER_PAUSE)
 
