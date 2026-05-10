@@ -18,15 +18,12 @@ QUESTION_BAR = "#e2e8f0"
 QUESTION_INK = "#0f172a"
 UI_FONT = "Arial"
 
-# Voiceover timing profile
-# Rough targets from storyboard:
-# Intro ~30s | Soal 1 ~3:00 | Soal 2 ~2:50 | Soal 3 ~2:10 | Soal 4 ~2:00 | Soal 5 ~2:30
-QUESTION_PAUSE = 2.6          # default 2-3 second hold after each question highlight
-QUESTION_SWIPE_TIME = 0.85    # slow left-to-right highlight sweep, easier to sync to VO
-STEP_PAUSE = 5.2              # default pause after a reasoning/formula step
-FORMULA_PAUSE = 6.5           # default pause after transformed formulas
+QUESTION_PAUSE = 2.6
+QUESTION_SWIPE_TIME = 0.85
+STEP_PAUSE = 5.2
+FORMULA_PAUSE = 6.5
 LONG_PAUSE = 8.0
-INTRO_HOLD = 17.0             # long final intro hold so total intro is around 30s
+INTRO_HOLD = 17.0
 
 SOAL1_HIGHLIGHT_PAUSE = 4.0
 SOAL1_STEP_PAUSE = 16.0
@@ -34,13 +31,13 @@ SOAL1_FORMULA_PAUSE = 17.0
 SOAL1_ANSWER_PAUSE = 13.65
 
 SOAL2_HIGHLIGHT_PAUSE = 4.0
-SOAL2_SILENT_WAVE_TIME = 6.0  # storyboard note: no narration here; let the standing wave move
+SOAL2_SILENT_WAVE_TIME = 6.0
 SOAL2_STEP_PAUSE = 13.0
 SOAL2_FORMULA_PAUSE = 14.0
 SOAL2_ANSWER_PAUSE = 17.2
 
 SOAL3_HIGHLIGHT_PAUSE = 4.0
-SOAL3_OSCILLATION_TIME = 9.0  # storyboard note: narrate observation during spring motion
+SOAL3_OSCILLATION_TIME = 9.0
 SOAL3_STEP_PAUSE = 8.0
 SOAL3_FORMULA_PAUSE = 11.0
 SOAL3_ANSWER_PAUSE = 15.25
@@ -189,9 +186,6 @@ def _swipe_single_highlight(scene, target, color=ACCENT, run_time=0.55, buff=0.0
 
 
 def swipe_in_highlight(scene, target, color=ACCENT, run_time=QUESTION_SWIPE_TIME):
-    # q_text rows are VGroups of Text lines when text wraps — highlight each line separately.
-    # The total sweep time is divided across wrapped lines so voiceover pacing stays predictable.
-    # A tight buff prevents the highlight from covering two rows at once.
     if isinstance(target, VGroup) and len(target) > 1 and isinstance(target[0], Text):
         per_line_time = max(0.35, run_time / len(target))
         highlights = []
@@ -282,7 +276,6 @@ def make_answer_box(*mobjects, color=GOOD):
 
 
 def make_var_legend(items):
-    """items: list of (latex_symbol, plain_text_description)"""
     rows = VGroup(*[
         VGroup(
             MathTex(sym, font_size=19, color=DIM),
@@ -533,7 +526,6 @@ class Soal2(MovingCameraScene):
         self.wait(1.5)
         self.play(Create(wave), run_time=1.6)
         wave.start_wave()
-        # VO cue: pause narration here and let the standing wave move visually.
         self.wait(SOAL2_SILENT_WAVE_TIME)
 
         antinode_offsets = [0.5, 1.5, 2.5, 3.5]
@@ -676,16 +668,13 @@ class Soal3(MovingCameraScene):
 
         self.play(Create(equilibrium_line), FadeIn(eq_label), Create(ceiling), Create(hatches), run_time=1.4)
         self.wait(1.0)
-        # Draw static initial-state versions (t=0: mass at top of swing)
         init_mass_y = equilibrium_y + amp
         init_spring = make_spring(spring_anchor, [-2.3, init_mass_y + 0.34, 0])
         init_mass = Square(side_length=0.68, color=PRIMARY, fill_color=PRIMARY, fill_opacity=0.75).move_to([-2.3, init_mass_y, 0])
         self.play(Create(init_spring), GrowFromCenter(init_mass), run_time=1.0)
         self.wait(0.4)
-        # Swap to always_redraw versions in one frame — positions are identical at t=0
         self.remove(init_spring, init_mass)
         self.add(spring, mass)
-        # VO cue: narrate the observation while the object oscillates.
         self.play(t_tracker.animate.set_value(3.2), run_time=SOAL3_OSCILLATION_TIME, rate_func=linear)
         self.play(t_tracker.animate.set_value(3.5), run_time=1.4, rate_func=smooth)
         self.wait(1.0)
@@ -700,8 +689,6 @@ class Soal3(MovingCameraScene):
         self.play(GrowArrow(accel_arrow), Write(accel_label), run_time=1.3)
         self.wait(SOAL3_STEP_PAUSE)
 
-        # Clear always_redraw updaters so the spring/mass can be faded out cleanly,
-        # freeing the left side for the algebraic steps.
         spring.clear_updaters()
         mass.clear_updaters()
         self.play(
@@ -818,7 +805,6 @@ class Soal4(MovingCameraScene):
         self.play(Create(target_line), Write(y_label), FadeIn(dot, scale=1.5), run_time=1.3)
         self.wait(SOAL4_GRAPH_PAUSE)
         self.play(FadeOut(VGroup(axes, amp_lines, target_line, amp_label, y_label, dot)), run_time=1.0)
-        # VO cue: explain why Ek depends on (A^2 - y^2) while the graph disappears.
         self.wait(3.5)
 
         steps = VGroup(
@@ -919,7 +905,6 @@ class Soal5(MovingCameraScene):
         self.play(Create(radius_line), Create(angle_arc), Write(angle_label), run_time=1.3)
         self.wait(1.0)
         self.play(FadeIn(proj_dot), Create(proj_line), Create(y_proj_line), Write(y_proj_label), run_time=1.4)
-        # VO cue: explain that the vertical projection gives y = A sin(theta).
         self.wait(SOAL5_DIAGRAM_PAUSE)
 
         y_steps = VGroup(
