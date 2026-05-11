@@ -18,42 +18,43 @@ QUESTION_BAR = "#e2e8f0"
 QUESTION_INK = "#0f172a"
 UI_FONT = "Arial"
 
-# Voiceover timing profile
-# Rough targets from storyboard:
-# Intro ~30s | Soal 1 ~3:00 | Soal 2 ~2:50 | Soal 3 ~2:10 | Soal 4 ~2:00 | Soal 5 ~2:30
-QUESTION_PAUSE = 2.6          # default 2-3 second hold after each question highlight
-QUESTION_SWIPE_TIME = 0.85    # slow left-to-right highlight sweep, easier to sync to VO
-STEP_PAUSE = 5.2              # default pause after a reasoning/formula step
-FORMULA_PAUSE = 6.5           # default pause after transformed formulas
-LONG_PAUSE = 8.0
-INTRO_HOLD = 17.0             # long final intro hold so total intro is around 30s
 
-SOAL1_HIGHLIGHT_PAUSE = 4.0
-SOAL1_STEP_PAUSE = 16.0
-SOAL1_FORMULA_PAUSE = 17.0
-SOAL1_ANSWER_PAUSE = 13.65
+QUESTION_PAUSE = 1.1
+QUESTION_SWIPE_TIME = 0.65
+STEP_PAUSE = 1.0
+INTRO_HOLD = 1.2
 
-SOAL2_HIGHLIGHT_PAUSE = 4.0
-SOAL2_SILENT_WAVE_TIME = 6.0  # storyboard note: no narration here; let the standing wave move
-SOAL2_STEP_PAUSE = 13.0
-SOAL2_FORMULA_PAUSE = 14.0
-SOAL2_ANSWER_PAUSE = 17.2
+POPUP_IN_TIME = 0.45
+POPUP_OUT_TIME = 0.35
+POPUP_READ = 3.0
+POPUP_READ_SHORT = 2.2
+POPUP_READ_LONG = 4.0
 
-SOAL3_HIGHLIGHT_PAUSE = 4.0
-SOAL3_OSCILLATION_TIME = 9.0  # storyboard note: narrate observation during spring motion
-SOAL3_STEP_PAUSE = 8.0
-SOAL3_FORMULA_PAUSE = 11.0
-SOAL3_ANSWER_PAUSE = 15.25
+SOAL1_HIGHLIGHT_PAUSE = 1.0
+SOAL1_STEP_PAUSE = 0.7
+SOAL1_FORMULA_PAUSE = 0.9
+SOAL1_ANSWER_PAUSE = 1.2
 
-SOAL4_HIGHLIGHT_PAUSE = 4.0
-SOAL4_GRAPH_PAUSE = 8.0
-SOAL4_FORMULA_PAUSE = 11.0
-SOAL4_ANSWER_PAUSE = 16.25
+SOAL2_HIGHLIGHT_PAUSE = 1.0
+SOAL2_WAVE_TIME = 2.8
+SOAL2_STEP_PAUSE = 0.8
+SOAL2_FORMULA_PAUSE = 0.9
+SOAL2_ANSWER_PAUSE = 1.2
 
-SOAL5_HIGHLIGHT_PAUSE = 4.0
-SOAL5_DIAGRAM_PAUSE = 9.0
-SOAL5_FORMULA_PAUSE = 11.5
-SOAL5_ANSWER_PAUSE = 13.85
+SOAL3_HIGHLIGHT_PAUSE = 1.0
+SOAL3_OSCILLATION_TIME = 3.2
+SOAL3_STEP_PAUSE = 0.8
+SOAL3_FORMULA_PAUSE = 0.9
+SOAL3_ANSWER_PAUSE = 1.2
+
+SOAL4_HIGHLIGHT_PAUSE = 1.0
+SOAL4_GRAPH_PAUSE = 1.8
+SOAL4_FORMULA_PAUSE = 0.9
+SOAL4_ANSWER_PAUSE = 1.2
+
+SOAL5_HIGHLIGHT_PAUSE = 1.0
+SOAL5_FORMULA_PAUSE = 0.9
+SOAL5_ANSWER_PAUSE = 1.2
 
 config.background_color = BG_COLOR
 
@@ -166,7 +167,6 @@ def make_question_screenshot(title, rows, width=11.4):
     return card
 
 
-
 def make_question_highlight(target, color=ACCENT, buff=0.075):
     rect = SurroundingRectangle(target, color=color, buff=buff, stroke_width=2)
     rect.set_fill(color, opacity=0.28)
@@ -189,9 +189,8 @@ def _swipe_single_highlight(scene, target, color=ACCENT, run_time=0.55, buff=0.0
 
 
 def swipe_in_highlight(scene, target, color=ACCENT, run_time=QUESTION_SWIPE_TIME):
-    # q_text rows are VGroups of Text lines when text wraps — highlight each line separately.
-    # The total sweep time is divided across wrapped lines so voiceover pacing stays predictable.
-    # A tight buff prevents the highlight from covering two rows at once.
+
+
     if isinstance(target, VGroup) and len(target) > 1 and isinstance(target[0], Text):
         per_line_time = max(0.35, run_time / len(target))
         highlights = []
@@ -281,8 +280,74 @@ def make_answer_box(*mobjects, color=GOOD):
     return VGroup(box, content)
 
 
+def make_popup(title, lines, width=5.5, chars=48, color=ACCENT):
+    if isinstance(title, Mobject):
+        title_mob = title
+    else:
+        title_mob = Text(title, font=UI_FONT, font_size=17, color=color, weight=BOLD)
+
+    body_items = []
+    for line in lines:
+        if isinstance(line, Mobject):
+            body_items.append(line)
+        else:
+            body_items.append(text_block(line, font_size=15, color=TEXT, chars=chars))
+
+    body = VGroup(*body_items).arrange(DOWN, aligned_edge=LEFT, buff=0.12)
+    content = VGroup(title_mob, body).arrange(DOWN, aligned_edge=LEFT, buff=0.16)
+
+    if content.width > width - 0.5:
+        content.scale_to_fit_width(width - 0.5)
+
+    box = RoundedRectangle(
+        width=width,
+        height=content.height + 0.45,
+        corner_radius=0.14,
+        stroke_color=color,
+        stroke_width=1.8,
+        fill_color=PANEL,
+        fill_opacity=0.95,
+    )
+
+    content.move_to(box)
+    content.align_to(box, LEFT).shift(RIGHT * 0.25)
+
+    return VGroup(box, content)
+
+
+def place_popup(popup, position=DOWN, buff=0.28):
+    if np.array_equal(position, DOWN):
+        popup.to_edge(DOWN, buff=buff)
+    elif np.array_equal(position, UP):
+        popup.to_edge(UP, buff=buff)
+    elif np.array_equal(position, LEFT):
+        popup.to_edge(LEFT, buff=buff)
+    elif np.array_equal(position, RIGHT):
+        popup.to_edge(RIGHT, buff=buff)
+    elif isinstance(position, np.ndarray):
+        popup.move_to(position)
+    elif isinstance(position, (list, tuple)):
+        popup.move_to(np.array(position))
+    else:
+        popup.move_to(position)
+    return popup
+
+
+def show_popup(scene, title, lines, position=DOWN, width=5.5, chars=48, wait_time=POPUP_READ, color=ACCENT):
+    popup = place_popup(make_popup(title, lines, width=width, chars=chars, color=color), position)
+    scene.play(FadeIn(popup, shift=UP * 0.12), run_time=POPUP_IN_TIME)
+    scene.wait(wait_time)
+    scene.play(FadeOut(popup), run_time=POPUP_OUT_TIME)
+    return popup
+
+
+def keep_popup(scene, title, lines, position=DOWN, width=5.5, chars=48, color=ACCENT):
+    popup = place_popup(make_popup(title, lines, width=width, chars=chars, color=color), position)
+    scene.play(FadeIn(popup, shift=UP * 0.12), run_time=POPUP_IN_TIME)
+    return popup
+
+
 def make_var_legend(items):
-    """items: list of (latex_symbol, plain_text_description)"""
     rows = VGroup(*[
         VGroup(
             MathTex(sym, font_size=19, color=DIM),
@@ -324,6 +389,18 @@ class Intro(Scene):
         self.play(FadeIn(level, shift=UP * 0.18), run_time=1.0)
         self.wait(0.5)
         self.play(Create(wave), run_time=3.5)
+        show_popup(
+            self,
+            "Alur Pembahasan",
+            [
+                "Ikuti kotak penjelasan yang muncul di layar.",
+                "Kita akan membaca data, memilih rumus, lalu menutup setiap soal dengan jawaban akhir.",
+            ],
+            position=DOWN * 0.95,
+            width=8.4,
+            chars=72,
+            wait_time=POPUP_READ_LONG,
+        )
         self.wait(INTRO_HOLD)
         end_scene(self, run_time=1.3)
 
@@ -356,7 +433,7 @@ class Soal1(MovingCameraScene):
             [0, 1, 3, 4, 5, 6, 7],
             dock_width=5.35,
             highlight_pause=SOAL1_HIGHLIGHT_PAUSE,
-            initial_pause=3.2,
+            initial_pause=2.4,
             swipe_time=0.95,
             dock_pause=1.2,
         )
@@ -380,7 +457,19 @@ class Soal1(MovingCameraScene):
         ])
         legend.next_to(knowns, DOWN, buff=0.35)
         self.play(FadeIn(legend, shift=LEFT * 0.15), run_time=0.8)
-        self.wait(1.0)
+        show_popup(
+            self,
+            "Baca dari Persamaan",
+            [
+                Tex(r"Koefisien di depan sinus adalah amplitudo ($A = 0{,}04$ m).", font_size=15, color=TEXT),
+                Tex(r"Faktor $8\pi$ di depan kurung adalah $\omega$ (kecepatan sudut).", font_size=15, color=TEXT),
+                Tex(r"Penyebut $x/2$ cocok dengan $x/v$, sehingga $v = 2$ m/s.", font_size=15, color=TEXT),
+            ],
+            position=LEFT * 1.8 + DOWN * 3.0,
+            width=5.8,
+            chars=50,
+            wait_time=POPUP_READ_LONG,
+        )
         self.play(FadeOut(question), run_time=0.85)
         self.wait(0.6)
 
@@ -398,44 +487,83 @@ class Soal1(MovingCameraScene):
         compare = VGroup(compare_title, general, specific).arrange(DOWN, buff=0.28)
         compare.to_edge(LEFT, buff=0.72).shift(UP * 0.2)
         self.play(FadeIn(compare_title, shift=UP * 0.1), run_time=1.0)
-        self.wait(2.0)
+        self.wait(1.5)
         self.play(Write(general), run_time=1.7)
         self.wait(SOAL1_FORMULA_PAUSE)
         self.play(Write(specific), run_time=1.7)
-        self.wait(SOAL1_FORMULA_PAUSE + 1.0)
+        show_popup(
+            self,
+            "Strategi",
+            [
+                Tex(r"Samakan bentuk umum dengan persamaan soal.", font_size=15, color=TEXT),
+                Tex(r"Setelah $A$, $\omega$, dan $v$ terbaca, cek tiap pernyataan satu per satu.", font_size=15, color=TEXT),
+            ],
+            position=LEFT * 1.8 + DOWN * 3.0,
+            width=5.5,
+            chars=48,
+            wait_time=POPUP_READ,
+        )
 
         checks = [
             (
                 MathTex(r"A = 0{,}04\,\text{m} = 4\,\text{cm}", font_size=26, color=TEXT),
                 Text("(A) Benar", font_size=18, color=GOOD, weight=BOLD),
+                "(A) Benar",
+                Tex(r"A benar karena $0{,}04$ meter sama dengan 4 sentimeter.", font_size=15, color=TEXT),
             ),
             (
                 MathTex(r"f = \frac{\omega}{2\pi} = \frac{8\pi}{2\pi} = 4\,\text{Hz}", font_size=26, color=TEXT),
                 Text("(B) Benar", font_size=18, color=GOOD, weight=BOLD),
+                "(B) Benar",
+                Tex(r"B benar karena frekuensi diperoleh dari $\omega$ dibagi $2\pi$.", font_size=15, color=TEXT),
             ),
             (
                 MathTex(r"T = \frac{1}{f} = \frac{1}{4} = 0{,}25\,\text{s}", font_size=26, color=TEXT),
                 Text("(C) Salah", font_size=18, color=BAD, weight=BOLD),
+                "(C) Salah",
+                Tex(r"C salah karena periode harus $1/f$, jadi nilainya $0{,}25$ s, bukan $0{,}5$ s.", font_size=15, color=TEXT),
             ),
             (
                 MathTex(r"v = 2\,\text{m/s}", font_size=26, color=TEXT),
                 Text("(D) Benar", font_size=18, color=GOOD, weight=BOLD),
+                "(D) Benar",
+                Tex(r"D benar karena bentuk $x/2$ cocok dengan $x/v$, sehingga $v = 2$ m/s.", font_size=15, color=TEXT),
             ),
         ]
 
         check_rows = VGroup(*[
             VGroup(formula, verdict).arrange(RIGHT, buff=0.45)
-            for formula, verdict in checks
+            for formula, verdict, _, _ in checks
         ]).arrange(DOWN, aligned_edge=LEFT, buff=0.28)
         check_rows.next_to(compare, DOWN, buff=0.4, aligned_edge=LEFT)
 
-        for row in check_rows:
+        for row, (_, _, verdict_title, explanation) in zip(check_rows, checks):
             self.play(FadeIn(row, shift=UP * 0.1), run_time=0.9)
+            show_popup(
+                self,
+                verdict_title,
+                [explanation],
+                position=DOWN * 3.2,
+                width=4.5,
+                chars=38,
+                wait_time=POPUP_READ_SHORT,
+                color=GOOD if "Benar" in verdict_title else BAD,
+            )
             self.wait(SOAL1_STEP_PAUSE)
 
         answer = make_answer_box(Text("Jawaban: A, B, dan D", font_size=28, color=GOOD, weight=BOLD))
         answer.to_corner(DR, buff=0.3)
         self.play(FadeIn(answer, scale=0.95), run_time=1.3)
+        show_popup(
+            self,
+            "Kesimpulan Soal 1",
+            [Tex(r"Pernyataan yang benar adalah A, B, dan D. Jangan tertukar frekuensi dan periode.", font_size=15, color=TEXT)],
+                position=LEFT * 0.2 + DOWN * 3.2,
+                width=3.5,
+                chars=38,
+                wait_time=POPUP_READ,
+            color=GOOD,
+        )
         self.wait(SOAL1_ANSWER_PAUSE)
 
         end_scene(self, run_time=1.2)
@@ -464,7 +592,7 @@ class Soal2(MovingCameraScene):
             [0, 1, 2],
             dock_width=5.25,
             highlight_pause=SOAL2_HIGHLIGHT_PAUSE,
-            initial_pause=3.0,
+            initial_pause=2.2,
             swipe_time=0.95,
             dock_pause=1.0,
         )
@@ -488,7 +616,19 @@ class Soal2(MovingCameraScene):
         ])
         legend.next_to(knowns, DOWN, buff=0.35)
         self.play(FadeIn(legend, shift=LEFT * 0.15), run_time=0.8)
-        self.wait(1.0)
+        show_popup(
+            self,
+            "Data Utama",
+            [
+                Tex(r"Panjang tali 4 m memuat 2 gelombang penuh.", font_size=15, color=TEXT),
+                Tex(r"Satu panjang gelombang $\lambda = 4/2 = 2$ m.", font_size=15, color=TEXT),
+                Tex(r"Yang dicari adalah posisi perut ke-3 dari ujung terikat.", font_size=15, color=TEXT),
+            ],
+            position=LEFT * 1.8 + DOWN * 3.0,
+            width=5.5,
+            chars=48,
+            wait_time=POPUP_READ_LONG,
+        )
         self.play(FadeOut(question), run_time=0.85)
         self.wait(0.6)
 
@@ -533,8 +673,19 @@ class Soal2(MovingCameraScene):
         self.wait(1.5)
         self.play(Create(wave), run_time=1.6)
         wave.start_wave()
-        # VO cue: pause narration here and let the standing wave move visually.
-        self.wait(SOAL2_SILENT_WAVE_TIME)
+        wave_note = keep_popup(
+            self,
+            "Baca Pola Gelombang",
+            [
+                Tex(r"Ujung terikat selalu menjadi simpul.", font_size=15, color=TEXT),
+                Tex(r"Perut adalah titik dengan simpangan maksimum.", font_size=15, color=TEXT),
+            ],
+            position=LEFT * 1.8 + DOWN * 3.0,
+            width=5.0,
+            chars=44,
+        )
+        self.wait(SOAL2_WAVE_TIME)
+        self.play(FadeOut(wave_note), run_time=POPUP_OUT_TIME)
 
         antinode_offsets = [0.5, 1.5, 2.5, 3.5]
         dots = VGroup()
@@ -547,11 +698,31 @@ class Soal2(MovingCameraScene):
             labels.add(label)
 
         self.play(FadeIn(dots), FadeIn(labels), run_time=1.3)
+        show_popup(
+            self,
+            "Nomori Perut",
+            [Tex(r"Dari ujung terikat, perut berurutan adalah P1, P2, P3, lalu P4.", font_size=15, color=TEXT)],
+            position=DOWN * 3.0,
+            width=5.0,
+            chars=44,
+            wait_time=POPUP_READ_SHORT,
+            color=GOOD,
+        )
         self.wait(SOAL2_STEP_PAUSE)
 
         third_x = x_start + 2.5 * meter_scale
         highlight = Circle(radius=0.34, color=BAD, stroke_width=4).move_to([third_x, wave_y, 0])
         self.play(Create(highlight), run_time=0.85)
+        show_popup(
+            self,
+            "Fokus",
+            [Tex(r"P3 adalah perut ketiga, jadi titik inilah yang jaraknya harus dihitung.", font_size=15, color=TEXT)],
+            position=DOWN * 3.0,
+            width=5.0,
+            chars=44,
+            wait_time=POPUP_READ_SHORT,
+            color=BAD,
+        )
         self.wait(SOAL2_STEP_PAUSE)
 
         measure = DoubleArrow(
@@ -563,6 +734,15 @@ class Soal2(MovingCameraScene):
         )
         measure_label = MathTex(r"x_3 = 2{,}5\,\text{m}", font_size=30, color=ACCENT).next_to(measure, DOWN, buff=0.18)
         self.play(Create(measure), Write(measure_label), run_time=1.4)
+        show_popup(
+            self,
+            "Hasil Visual",
+            [Tex(r"Perut ketiga berada 2,5 m dari ujung terikat. Berikutnya kita buktikan dengan rumus.", font_size=15, color=TEXT)],
+            position=LEFT * 1.5 + UP * 1.9,
+            width=5.0,
+            chars=44,
+            wait_time=POPUP_READ,
+        )
         self.wait(SOAL2_STEP_PAUSE)
 
         wave.stop_wave()
@@ -580,13 +760,38 @@ class Soal2(MovingCameraScene):
         ).arrange(DOWN, aligned_edge=LEFT, buff=0.35)
         steps.to_edge(LEFT, buff=0.8).shift(DOWN * 0.3)
 
-        for step in steps:
+        step_notes = [
+            Tex(r"Karena ada 2 gelombang penuh pada 4 m, $\lambda = 2$ m.", font_size=15, color=TEXT),
+            Tex(r"Untuk ujung terikat, perut ke-$n$ berada pada $(2n-1)\,\lambda/4$.", font_size=15, color=TEXT),
+            Tex(r"Masukkan $n = 3$ dan $\lambda = 2$ m.", font_size=15, color=TEXT),
+            Tex(r"Hasil akhirnya 2,5 m dari ujung terikat.", font_size=15, color=TEXT),
+        ]
+        for step, note in zip(steps, step_notes):
             self.play(Write(step), run_time=1.5)
+            show_popup(
+                self,
+                "Langkah Hitung",
+                [note],
+                position=DOWN * 3.2,
+                width=4.5,
+                chars=38,
+                wait_time=POPUP_READ_SHORT,
+            )
             self.wait(SOAL2_FORMULA_PAUSE)
 
         answer = make_answer_box(Text("Jawaban: 2,5 m", font_size=30, color=GOOD, weight=BOLD))
         answer.next_to(legend, DOWN, buff=0.3)
         self.play(FadeIn(answer, scale=0.95), run_time=1.2)
+        show_popup(
+            self,
+            "Kesimpulan Soal 2",
+            [Tex(r"Letak perut ketiga adalah 2,5 m dari ujung terikat.", font_size=15, color=TEXT)],
+            position=LEFT * 1.8 + DOWN * 3.0,
+            width=5.5,
+            chars=48,
+            wait_time=POPUP_READ,
+            color=GOOD,
+        )
         self.wait(SOAL2_ANSWER_PAUSE)
 
         end_scene(self, run_time=1.2)
@@ -614,7 +819,7 @@ class Soal3(MovingCameraScene):
             [0, 1],
             dock_width=5.25,
             highlight_pause=SOAL3_HIGHLIGHT_PAUSE,
-            initial_pause=2.8,
+            initial_pause=2.1,
             swipe_time=0.9,
             dock_pause=0.9,
         )
@@ -637,7 +842,18 @@ class Soal3(MovingCameraScene):
         ])
         legend.next_to(knowns, DOWN, buff=0.35)
         self.play(FadeIn(legend, shift=LEFT * 0.15), run_time=0.8)
-        self.wait(1.0)
+        show_popup(
+            self,
+            "Ide Fisika",
+            [
+                Tex(r"Pada gerak harmonik, percepatan selalu mengarah kembali ke titik seimbang.", font_size=15, color=TEXT),
+                Tex(r"Karena benda berada di atas titik seimbang, arah percepatannya ke bawah.", font_size=15, color=TEXT),
+            ],
+            position=LEFT * 1.8 + DOWN * 3.0,
+            width=5.5,
+            chars=48,
+            wait_time=POPUP_READ_LONG,
+        )
         self.play(FadeOut(question), run_time=0.85)
         self.wait(0.6)
 
@@ -676,19 +892,26 @@ class Soal3(MovingCameraScene):
 
         self.play(Create(equilibrium_line), FadeIn(eq_label), Create(ceiling), Create(hatches), run_time=1.4)
         self.wait(1.0)
-        # Draw static initial-state versions (t=0: mass at top of swing)
+
         init_mass_y = equilibrium_y + amp
         init_spring = make_spring(spring_anchor, [-2.3, init_mass_y + 0.34, 0])
         init_mass = Square(side_length=0.68, color=PRIMARY, fill_color=PRIMARY, fill_opacity=0.75).move_to([-2.3, init_mass_y, 0])
         self.play(Create(init_spring), GrowFromCenter(init_mass), run_time=1.0)
         self.wait(0.4)
-        # Swap to always_redraw versions in one frame — positions are identical at t=0
+
         self.remove(init_spring, init_mass)
         self.add(spring, mass)
-        # VO cue: narrate the observation while the object oscillates.
+        motion_note = keep_popup(
+            self,
+            "Amati Arah Gaya Pemulih",
+            [Tex(r"Saat benda menyimpang dari titik seimbang, geraknya selalu ditarik kembali menuju tengah.", font_size=15, color=TEXT)],
+            position=LEFT * 1.8 + DOWN * 3.0,
+            width=5.2,
+            chars=46,
+        )
         self.play(t_tracker.animate.set_value(3.2), run_time=SOAL3_OSCILLATION_TIME, rate_func=linear)
         self.play(t_tracker.animate.set_value(3.5), run_time=1.4, rate_func=smooth)
-        self.wait(1.0)
+        self.play(FadeOut(motion_note), run_time=POPUP_OUT_TIME)
 
         position_arrow = Arrow([-1.55, equilibrium_y, 0], [-1.55, equilibrium_y + 0.85, 0], color=PRIMARY, buff=0, stroke_width=4)
         position_label = MathTex(r"y = +2\,\text{cm}", font_size=25, color=PRIMARY).next_to(position_arrow, RIGHT, buff=0.16)
@@ -696,12 +919,30 @@ class Soal3(MovingCameraScene):
         accel_label = MathTex(r"\vec{a}", font_size=32, color=SECONDARY).next_to(accel_arrow, LEFT, buff=0.15)
 
         self.play(GrowArrow(position_arrow), Write(position_label), run_time=1.3)
+        show_popup(
+            self,
+            "Simpangan Positif",
+            [Tex(r"$y = +2$ cm berarti posisi benda di atas titik seimbang.", font_size=15, color=TEXT)],
+            position=LEFT * 1.5 + DOWN * 3.0,
+            width=5.0,
+            chars=44,
+            wait_time=POPUP_READ_SHORT,
+        )
         self.wait(SOAL3_STEP_PAUSE)
         self.play(GrowArrow(accel_arrow), Write(accel_label), run_time=1.3)
+        show_popup(
+            self,
+            "Arah Percepatan",
+            [Tex(r"Tanda minus pada $a = -\omega^2 y$ menunjukkan arah percepatan berlawanan dengan simpangan.", font_size=15, color=TEXT)],
+            position=LEFT * 1.8 + DOWN * 3.0,
+            width=5.2,
+            chars=46,
+            wait_time=POPUP_READ,
+            color=SECONDARY,
+        )
         self.wait(SOAL3_STEP_PAUSE)
 
-        # Clear always_redraw updaters so the spring/mass can be faded out cleanly,
-        # freeing the left side for the algebraic steps.
+
         spring.clear_updaters()
         mass.clear_updaters()
         self.play(
@@ -721,8 +962,23 @@ class Soal3(MovingCameraScene):
         ).arrange(DOWN, aligned_edge=LEFT, buff=0.3)
         steps.to_edge(LEFT, buff=0.72).shift(DOWN * 0.5)
 
-        for step in steps:
+        step_notes = [
+            Tex(r"Dari frekuensi 5 Hz, $\omega = 2\pi f = 10\pi$ rad/s.", font_size=15, color=TEXT),
+            Tex(r"Rumus percepatan GHS adalah $a = -\omega^2 y$.", font_size=15, color=TEXT),
+            Tex(r"Masukkan $\omega = 10\pi$ dan $y = 0{,}02$ m.", font_size=15, color=TEXT),
+            Tex(r"Nilai negatif berarti arah percepatan ke bawah.", font_size=15, color=TEXT),
+        ]
+        for step, note in zip(steps, step_notes):
             self.play(Write(step), run_time=1.4)
+            show_popup(
+                self,
+                "Langkah Hitung",
+                [note],
+                position=DOWN * 3.2,
+                width=4.5,
+                chars=38,
+                wait_time=POPUP_READ_SHORT,
+            )
             self.wait(SOAL3_FORMULA_PAUSE)
 
         answer = make_answer_box(
@@ -731,6 +987,16 @@ class Soal3(MovingCameraScene):
         )
         answer.next_to(steps, DOWN, buff=0.4).align_to(steps, LEFT)
         self.play(FadeIn(answer, scale=0.95), run_time=1.3)
+        show_popup(
+            self,
+            "Kesimpulan Soal 3",
+            [Tex(r"Besar percepatan $2\pi^2$ m/s$^2 \approx 19{,}74$ m/s$^2$, arahnya ke bawah menuju titik seimbang.", font_size=15, color=TEXT)],
+            position=DOWN * 3.2,
+            width=4.5,
+            chars=38,
+            wait_time=POPUP_READ,
+            color=GOOD,
+        )
         self.wait(SOAL3_ANSWER_PAUSE)
 
         end_scene(self, run_time=1.2)
@@ -758,7 +1024,7 @@ class Soal4(MovingCameraScene):
             [0, 1],
             dock_width=5.25,
             highlight_pause=SOAL4_HIGHLIGHT_PAUSE,
-            initial_pause=2.8,
+            initial_pause=2.1,
             swipe_time=0.9,
             dock_pause=0.9,
         )
@@ -782,7 +1048,18 @@ class Soal4(MovingCameraScene):
         ])
         legend.next_to(knowns, DOWN, buff=0.35)
         self.play(FadeIn(legend, shift=LEFT * 0.15), run_time=0.8)
-        self.wait(1.0)
+        show_popup(
+            self,
+            "Data dan Target",
+            [
+                Tex(r"Ubah semua satuan ke SI: gram ke kg, cm ke m.", font_size=15, color=TEXT),
+                Tex(r"Energi kinetik GHS saat $y \neq 0$ dihitung dari sisa energi total: $A^2 - y^2$.", font_size=15, color=TEXT),
+            ],
+            position=LEFT * 1.8 + DOWN * 3.0,
+            width=5.5,
+            chars=48,
+            wait_time=POPUP_READ_LONG,
+        )
         self.play(FadeOut(question), run_time=0.85)
         self.wait(0.6)
 
@@ -816,10 +1093,32 @@ class Soal4(MovingCameraScene):
         self.play(Create(amp_lines), Write(amp_label), run_time=1.2)
         self.wait(SOAL4_GRAPH_PAUSE - 1.0)
         self.play(Create(target_line), Write(y_label), FadeIn(dot, scale=1.5), run_time=1.3)
-        self.wait(SOAL4_GRAPH_PAUSE)
+        show_popup(
+            self,
+            "Makna Grafik",
+            [
+                Tex(r"Di $y = 2$ cm, benda belum mencapai amplitudo.", font_size=15, color=TEXT),
+                Tex(r"Jadi kecepatannya masih ada dan energi kinetiknya belum nol.", font_size=15, color=TEXT),
+            ],
+            position=LEFT * 1.8 + DOWN * 3.0,
+            width=5.2,
+            chars=46,
+            wait_time=POPUP_READ,
+        )
         self.play(FadeOut(VGroup(axes, amp_lines, target_line, amp_label, y_label, dot)), run_time=1.0)
-        # VO cue: explain why Ek depends on (A^2 - y^2) while the graph disappears.
-        self.wait(3.5)
+        show_popup(
+            self,
+            Tex(r"Mengapa $A^2-y^2$?", font_size=17, color=ACCENT),
+            [
+                Tex(r"Energi total sebanding dengan $A^2$.", font_size=15, color=TEXT),
+                Tex(r"Energi potensial saat posisi $y$ sebanding dengan $y^2$.", font_size=15, color=TEXT),
+                Tex(r"Sisa dari keduanya menjadi energi kinetik.", font_size=15, color=TEXT),
+            ],
+            position=LEFT * 1.8 + DOWN * 3.0,
+            width=5.5,
+            chars=48,
+            wait_time=POPUP_READ_LONG,
+        )
 
         steps = VGroup(
             MathTex(r"\omega = \frac{2\pi}{T} = \frac{2\pi}{0{,}1} = 20\pi\,\text{rad/s}", font_size=30, color=TEXT),
@@ -829,8 +1128,23 @@ class Soal4(MovingCameraScene):
         ).arrange(DOWN, aligned_edge=LEFT, buff=0.32)
         steps.to_edge(LEFT, buff=0.72).shift(DOWN * 0.3)
 
-        for step in steps:
+        step_notes = [
+            Tex(r"Periode 0,1 s memberi $\omega = 20\pi$ rad/s.", font_size=15, color=TEXT),
+            Tex(r"Gunakan rumus energi kinetik GHS.", font_size=15, color=TEXT),
+            Tex(r"Masukkan $m$, $\omega$, $A$, dan $y$ dalam satuan SI.", font_size=15, color=TEXT),
+            Tex(r"Hasil eksak adalah $0{,}024\pi^2$ joule.", font_size=15, color=TEXT),
+        ]
+        for step, note in zip(steps, step_notes):
             self.play(Write(step), run_time=1.4)
+            show_popup(
+                self,
+                "Langkah Hitung",
+                [note],
+                position=DOWN * 3.2,
+                width=4.5,
+                chars=38,
+                wait_time=POPUP_READ_SHORT,
+            )
             self.wait(SOAL4_FORMULA_PAUSE)
 
         answer = make_answer_box(
@@ -839,6 +1153,16 @@ class Soal4(MovingCameraScene):
         )
         answer.next_to(steps, DOWN, buff=0.4).align_to(steps, LEFT)
         self.play(FadeIn(answer, scale=0.95), run_time=1.2)
+        show_popup(
+            self,
+            "Kesimpulan Soal 4",
+            [Tex(r"Energi kinetiknya $0{,}024\pi^2$ J, atau sekitar 0,237 J.", font_size=15, color=TEXT)],
+            position=DOWN * 3.2,
+            width=4.5,
+            chars=38,
+            wait_time=POPUP_READ,
+            color=GOOD,
+        )
         self.wait(SOAL4_ANSWER_PAUSE)
 
         end_scene(self, run_time=1.2)
@@ -856,7 +1180,7 @@ class Soal5(MovingCameraScene):
             "Soal 5: Energi Potensial",
             rows=[
                 q_text("Sebuah partikel bermassa 50 gram bergetar harmonis dengan frekuensi 100 Hz dan amplitudo 2 cm,"),
-                q_text("maka besar energi potensial pada saat sudut fasenya 30° adalah . . . joule."),
+                q_text("maka besar energi potensial pada saat sudut fasenya 30 derajat adalah . . . joule."),
             ],
         )
         present_question(
@@ -866,7 +1190,7 @@ class Soal5(MovingCameraScene):
             [0, 1],
             dock_width=5.25,
             highlight_pause=SOAL5_HIGHLIGHT_PAUSE,
-            initial_pause=2.8,
+            initial_pause=2.1,
             swipe_time=0.9,
             dock_pause=0.9,
         )
@@ -882,7 +1206,6 @@ class Soal5(MovingCameraScene):
             side=RIGHT,
             y_shift=0.32,
         )
-        self.wait(1.0)
 
         legend = make_var_legend([
             (r"\omega", "kecepatan sudut"),
@@ -892,6 +1215,18 @@ class Soal5(MovingCameraScene):
         ])
         legend.next_to(knowns, DOWN, buff=0.35)
         self.play(FadeIn(legend, shift=LEFT * 0.15), run_time=0.8)
+        show_popup(
+            self,
+            "Langkah Tambahan",
+            [
+                Tex(r"Soal memberi sudut fase, bukan simpangan langsung.", font_size=15, color=TEXT),
+                Tex(r"Cari simpangan $y$ dulu dengan $y = A\sin\theta$, baru hitung energi potensial.", font_size=15, color=TEXT),
+            ],
+            position=LEFT * 1.8 + DOWN * 3.0,
+            width=5.5,
+            chars=48,
+            wait_time=POPUP_READ_LONG,
+        )
 
         self.play(FadeOut(question), run_time=0.85)
         self.wait(0.6)
@@ -919,17 +1254,40 @@ class Soal5(MovingCameraScene):
         self.play(Create(radius_line), Create(angle_arc), Write(angle_label), run_time=1.3)
         self.wait(1.0)
         self.play(FadeIn(proj_dot), Create(proj_line), Create(y_proj_line), Write(y_proj_label), run_time=1.4)
-        # VO cue: explain that the vertical projection gives y = A sin(theta).
-        self.wait(SOAL5_DIAGRAM_PAUSE)
+        show_popup(
+            self,
+            "Proyeksi Fase",
+            [
+                Tex(r"Jari-jari lingkaran mewakili amplitudo $A$.", font_size=15, color=TEXT),
+                Tex(r"Proyeksi vertikalnya adalah simpangan $y$, sehingga $y = A\sin\theta$.", font_size=15, color=TEXT),
+            ],
+            position=LEFT * 1.8 + DOWN * 3.0,
+            width=5.0,
+            chars=44,
+            wait_time=POPUP_READ,
+        )
 
         y_steps = VGroup(
             MathTex(r"y = A\sin\theta", font_size=31, color=PRIMARY),
             MathTex(r"y = 0{,}02\sin 30^\circ", font_size=31, color=TEXT),
             MathTex(r"y = 0{,}01\,\text{m}", font_size=34, color=ACCENT),
         ).arrange(DOWN, buff=0.22).move_to(RIGHT * 1.05 + DOWN * 1.25)
-        for step in y_steps:
+        y_notes = [
+            Tex(r"Gunakan proyeksi sinus untuk mendapatkan simpangan.", font_size=15, color=TEXT),
+            Tex(r"Masukkan $A = 0{,}02$ m dan $\theta = 30^\circ$.", font_size=15, color=TEXT),
+            Tex(r"Karena $\sin 30^\circ = 0{,}5$, maka $y = 0{,}01$ m.", font_size=15, color=TEXT),
+        ]
+        for step, note in zip(y_steps, y_notes):
             self.play(FadeIn(step, shift=UP * 0.1), run_time=1.1)
-            self.wait(SOAL5_DIAGRAM_PAUSE - 2.0)
+            show_popup(
+                self,
+                "Cari Simpangan",
+                [note],
+                position=LEFT * 1.8 + DOWN * 3.0,
+                width=5.0,
+                chars=44,
+                wait_time=POPUP_READ_SHORT,
+            )
 
         self.wait(0.5)
         self.play(
@@ -947,8 +1305,24 @@ class Soal5(MovingCameraScene):
         ).arrange(DOWN, aligned_edge=LEFT, buff=0.3)
         steps.to_edge(LEFT, buff=0.72).shift(DOWN * 0.2)
 
-        for step in steps:
+        step_notes = [
+            Tex(r"Frekuensi 100 Hz memberi $\omega = 200\pi$ rad/s.", font_size=15, color=TEXT),
+            Tex(r"Simpangan dari fase tadi adalah $y = 0{,}01$ m.", font_size=15, color=TEXT),
+            Tex(r"Energi potensial GHS hanya memakai $y^2$.", font_size=15, color=TEXT),
+            Tex(r"Masukkan $m$, $\omega$, dan $y$ dalam satuan SI.", font_size=15, color=TEXT),
+            Tex(r"Hasil eksak adalah $0{,}1\pi^2$ joule.", font_size=15, color=TEXT),
+        ]
+        for step, note in zip(steps, step_notes):
             self.play(Write(step), run_time=1.4)
+            show_popup(
+                self,
+                "Langkah Hitung",
+                [note],
+                position=DOWN * 3.2,
+                width=4.5,
+                chars=38,
+                wait_time=POPUP_READ_SHORT,
+            )
             self.wait(SOAL5_FORMULA_PAUSE)
 
         answer = make_answer_box(
@@ -957,14 +1331,219 @@ class Soal5(MovingCameraScene):
         )
         answer.next_to(steps, DOWN, buff=0.35).align_to(steps, LEFT)
         self.play(FadeIn(answer, scale=0.95), run_time=1.2)
+        show_popup(
+            self,
+            "Kesimpulan Soal 5",
+            [
+                Tex(r"Energi potensialnya $0{,}1\pi^2$ J, atau sekitar 0,987 J.", font_size=15, color=TEXT),
+                Tex(r"Ingat: $E_p$ memakai $y^2$, sedangkan $E_k$ memakai $A^2 - y^2$.", font_size=15, color=TEXT),
+            ],
+            position=DOWN * 3.2,
+            width=4.5,
+            chars=38,
+            wait_time=POPUP_READ_LONG,
+            color=GOOD,
+        )
         self.wait(SOAL5_ANSWER_PAUSE)
+
+        end_scene(self, run_time=1.2)
+
+
+class Penutup(Scene):
+    def construct(self):
+        begin_scene(self)
+
+        title = Text(
+            "Ringkasan Jawaban",
+            font=UI_FONT,
+            font_size=42,
+            color=TEXT,
+            weight=BOLD,
+        )
+
+        def answer_row(label, answer):
+            label_mob = Text(
+                label,
+                font=UI_FONT,
+                font_size=22,
+                color=PRIMARY,
+                weight=BOLD,
+            )
+
+            return VGroup(label_mob, answer).arrange(
+                RIGHT,
+                buff=0.45,
+                aligned_edge=DOWN,
+            )
+
+        rows = VGroup(
+            answer_row(
+                "Soal 1",
+                Text(
+                    "A, B, dan D",
+                    font=UI_FONT,
+                    font_size=24,
+                    color=GOOD,
+                    weight=BOLD,
+                ),
+            ),
+            answer_row(
+                "Soal 2",
+                Text(
+                    "2,5 m dari ujung terikat",
+                    font=UI_FONT,
+                    font_size=24,
+                    color=GOOD,
+                    weight=BOLD,
+                ),
+            ),
+            answer_row(
+                "Soal 3",
+                VGroup(
+                    MathTex(
+                        r"19{,}74\,\text{m/s}^2,",
+                        font_size=28,
+                        color=GOOD,
+                    ),
+                    Text(
+                        "arah ke bawah",
+                        font=UI_FONT,
+                        font_size=24,
+                        color=GOOD,
+                        weight=BOLD,
+                    ),
+                ).arrange(RIGHT, buff=0.12, aligned_edge=DOWN),
+            ),
+            answer_row(
+                "Soal 4",
+                MathTex(
+                    r"E_k = 0{,}024\pi^2\,\text{J}",
+                    font_size=28,
+                    color=GOOD,
+                ),
+            ),
+            answer_row(
+                "Soal 5",
+                MathTex(
+                    r"E_p = 0{,}1\pi^2\,\text{J}",
+                    font_size=28,
+                    color=GOOD,
+                ),
+            ),
+        ).arrange(DOWN, aligned_edge=LEFT, buff=0.28)
+
+        summary_shell = RoundedRectangle(
+            width=8.6,
+            height=rows.height + 0.75,
+            corner_radius=0.16,
+            stroke_color=PANEL_STROKE,
+            stroke_width=1.8,
+            fill_color=PANEL,
+            fill_opacity=0.8,
+        )
+
+        rows.move_to(summary_shell)
+        rows.align_to(summary_shell, LEFT).shift(RIGHT * 0.45)
+
+        summary = VGroup(summary_shell, rows)
+
+
+        popup_title = Text(
+            "Kunci Pembahasan",
+            font=UI_FONT,
+            font_size=30,
+            color=ACCENT,
+            weight=BOLD,
+        )
+
+        key1 = Tex(
+            r"Gelombang berjalan: cocokkan persamaan dengan bentuk umum.",
+            font_size=21,
+            color=TEXT,
+        )
+
+        key2 = VGroup(
+            Tex(
+                r"Gelombang stasioner: perut ke-$n$ dari ujung terikat ada di",
+                font_size=21,
+                color=TEXT,
+            ),
+            MathTex(
+                r"(2n-1)\lambda/4.",
+                font_size=25,
+                color=TEXT,
+            ),
+        ).arrange(RIGHT, buff=0.12, aligned_edge=DOWN)
+
+        key3 = VGroup(
+            Tex(
+                r"GHS: percepatan menuju titik seimbang;",
+                font_size=21,
+                color=TEXT,
+            ),
+            MathTex(
+                r"E_k \propto A^2-y^2,\quad E_p \propto y^2.",
+                font_size=25,
+                color=TEXT,
+            ),
+        ).arrange(RIGHT, buff=0.16, aligned_edge=DOWN)
+
+        popup_content = VGroup(
+            popup_title,
+            key1,
+            key2,
+            key3,
+        ).arrange(DOWN, aligned_edge=LEFT, buff=0.18)
+
+        max_popup_width = 10.8
+        if popup_content.width > max_popup_width:
+            popup_content.scale_to_fit_width(max_popup_width)
+
+        popup_box = RoundedRectangle(
+            width=popup_content.width + 0.7,
+            height=popup_content.height + 0.45,
+            corner_radius=0.16,
+            stroke_color=ACCENT,
+            stroke_width=2.0,
+            fill_color=PANEL,
+            fill_opacity=0.92,
+        )
+
+        popup_content.move_to(popup_box)
+        popup_content.align_to(popup_box, LEFT).shift(RIGHT * 0.35)
+
+        popup = VGroup(popup_box, popup_content)
+
+
+        full_layout = VGroup(
+            title,
+            summary,
+            popup,
+        ).arrange(
+            DOWN,
+            buff=0.38,
+            aligned_edge=ORIGIN,
+        )
+
+        max_height = config.frame_height - 0.65
+        if full_layout.height > max_height:
+            full_layout.scale_to_fit_height(max_height)
+
+        full_layout.move_to(ORIGIN)
+
+        self.play(FadeIn(title, shift=UP * 0.15), run_time=1.0)
+        self.play(FadeIn(summary, shift=UP * 0.15), run_time=1.2)
+        self.play(FadeIn(popup, shift=UP * 0.15), run_time=1.0)
+
+        self.wait(POPUP_READ_LONG)
+        self.wait(1.0)
 
         end_scene(self, run_time=1.2)
 
 
 class FullVideo(MovingCameraScene):
     def construct(self):
-        for scene_class in [Intro, Soal1, Soal2, Soal3, Soal4, Soal5]:
+        for scene_class in [Intro, Soal1, Soal2, Soal3, Soal4, Soal5, Penutup]:
             scene_class.construct(self)
             self.clear()
             reset_camera_frame(self)
